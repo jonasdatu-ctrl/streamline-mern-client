@@ -12,6 +12,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
 import { MESSAGES } from "../config/constants";
+import { apiGet } from "../utils/api";
 
 /**
  * PopOn Backlog Report page component
@@ -29,14 +30,11 @@ const PopOnBacklogReport = () => {
     const fetchReportData = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/reports/popon-backlog");
+        const response = await apiGet("/reports/popon-backlog");
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch PopOn backlog report data");
-        }
-
-        const data = await response.json();
-        setReportData(data);
+        // Handle different response formats from server
+        const data = response.data || response;
+        setReportData(Array.isArray(data) ? data : []);
         setError(null);
       } catch (err) {
         setError(err.message || "An error occurred while fetching the report");
