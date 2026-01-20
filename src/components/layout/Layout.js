@@ -79,7 +79,7 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
   };
 
   return (
-    <div className="hidden h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
