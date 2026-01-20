@@ -3,17 +3,19 @@
  * Authentication Context
  *
  * Provides authentication state management throughout the application.
- * Uses Firebase Auth to track user login status and handle authentication changes.
+ * Supports two authentication methods:
+ * 1. Firebase Auth (Google OAuth)
+ * 2. Local Auth (Username/Password)
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../config/firebase";
 
 /**
  * Authentication Context
- * Holds the current user and loading state
+ * Holds the current user, loading state, and authentication type
  */
 const AuthContext = createContext();
 
@@ -22,11 +24,12 @@ const AuthContext = createContext();
  * @returns {Object} Authentication context value
  * @returns {Object|null} currentUser - Current authenticated user or null
  * @returns {boolean} loading - Whether authentication state is being determined
+ * @returns {string} authType - Type of authentication ('firebase' or 'local')
  */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -35,7 +38,8 @@ export const useAuth = () => {
  * Authentication Provider Component
  *
  * Wraps the application to provide authentication context.
- * Listens for authentication state changes and manages loading state.
+ * Checks for Firebase authentication and local JWT token on mount.
+ * Manages loading state for both authentication methods.
  *
  * @param {Object} props - Component props
  * @param {ReactNode} props.children - Child components to render
@@ -43,28 +47,83 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authType, setAuthType] = useState(null); // 'firebase' or 'local'
 
   useEffect(() => {
     /**
-     * Firebase auth state listener
-     * Updates currentUser state when authentication state changes
+     * Combined authentication check
+     * Checks Firebase auth and local JWT token
      */
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
+    const checkAuth = async () => {
+      try {
+        // Check for local JWT token
+        const token = localStorage.getItem("authToken");
+        const storedUser = localStorage.getItem("user");
 
-    // Cleanup subscription on unmount
-    return unsubscribe;
+        if (token && storedUser) {
+          // User has local authentication
+          setCurrentUser(JSON.parse(storedUser));
+          setAuthType("local");
+          setLoading(false);
+          return; // Don't check Firebase if local auth exists
+        }
+
+        // Firebase auth state listener
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user) {
+            setCurrentUser(user);
+            setAuthType("firebase");
+          } else {
+            setCurrentUser(null);
+            setAuthType(null);
+          }
+          setLoading(false);
+        });
+
+        // Cleanup subscription on unmount
+        return unsubscribe;
+      } catch (error) {
+        console.error("Authentication check error:", error);
+        setCurrentUser(null);
+        setAuthType(null);
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   /**
+   * Logout function
+   * Clears both local storage and Firebase session
+   */
+  const logout = async () => {
+    try {
+      // Clear local JWT
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+
+      // Firebase logout if applicable
+      if (authType === "firebase" && auth.currentUser) {
+        await auth.signOut();
+      }
+
+      setCurrentUser(null);
+      setAuthType(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  /**
    * Context value object
-   * Contains current user and loading state
+   * Contains current user, loading state, auth type, and logout function
    */
   const value = {
     currentUser,
-    loading
+    loading,
+    authType,
+    logout,
   };
 
   return (
