@@ -12,6 +12,7 @@ export const ROUTES = {
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
   GENERIC_CASE_STATUS_UPDATE: "/dashboard/generic-case-status-update",
   CASES_SHIPPED_TO_CUSTOMER: "/dashboard/cases-shipped-to-customer",
+  POPON_BACKLOG_REPORT: "/dashboard/popon-backlog-report",
 };
 
 /**
@@ -64,5 +65,15 @@ export const NAV_ITEMS = [
   },
   { label: "Users", key: "users", route: null },
   { label: "Settings", key: "settings", route: null },
-  { label: "Reports", key: "reports", route: null },
+  {
+    label: "Reports and Analytics",
+    key: "reports-and-analytics",
+    children: [
+      {
+        label: "PopOn Backlog Report",
+        key: "popon-backlog-report",
+        route: ROUTES.POPON_BACKLOG_REPORT,
+      },
+    ],
+  },
 ];
