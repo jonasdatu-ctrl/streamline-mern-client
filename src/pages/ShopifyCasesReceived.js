@@ -217,7 +217,7 @@ const ShopifyCasesReceived = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Input Section - Left Column */}
           <div className="lg:col-span-1">
-            <div className="bg-white shadow-sm rounded-lg p-6 space-y-4">
+            <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Case ID Input
