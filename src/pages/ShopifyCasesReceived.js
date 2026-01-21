@@ -20,6 +20,7 @@ import { apiPost } from "../utils/api";
 const ShopifyCasesReceived = () => {
   const [caseInput, setCaseInput] = useState("");
   const [processingCases, setProcessingCases] = useState([]);
+  const [existingCases, setExistingCases] = useState([]);
   const [invalidCases, setInvalidCases] = useState([]);
   const [successfulCases, setSuccessfulCases] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -51,6 +52,7 @@ const ShopifyCasesReceived = () => {
     setLoading(true);
     setError(null);
     setProcessingCases([]);
+    setExistingCases([]);
     setInvalidCases([]);
     setSuccessfulCases([]);
 
@@ -67,15 +69,16 @@ const ShopifyCasesReceived = () => {
             const caseData = dbCheckResponse.data;
 
             if (caseData.exists) {
-              // Case exists in database - add to invalid cases
-              setInvalidCases((prev) => [
+              // Case exists in database - add to existing cases
+              setExistingCases((prev) => [
                 ...prev,
                 {
                   caseId,
-                  reason: "Case already exists in database",
                   caseData: caseData.caseData,
                   caseStatus:
                     caseData.caseData?.Status_Streamline_Options || "Unknown",
+                  receivedDate: caseData.caseData?.Case_Date_Received || "N/A",
+                  isRush: caseData.caseData?.IsRushOrder || false,
                 },
               ]);
             } else {
@@ -177,6 +180,7 @@ const ShopifyCasesReceived = () => {
   const handleClear = () => {
     setCaseInput("");
     setProcessingCases([]);
+    setExistingCases([]);
     setInvalidCases([]);
     setSuccessfulCases([]);
     setError(null);
@@ -193,7 +197,7 @@ const ShopifyCasesReceived = () => {
   };
 
   const totalProcessed =
-    processingCases.length + invalidCases.length + successfulCases.length;
+    processingCases.length + existingCases.length + invalidCases.length + successfulCases.length;
   const totalCaseIds = parseCaseIds(caseInput).length;
 
   return (
@@ -287,8 +291,7 @@ const ShopifyCasesReceived = () => {
                   )}
                 </h2>
                 <p className="text-xs text-gray-600 mt-1">
-                  Cases currently being processed (pending Shopify or database
-                  lookup)
+                  Cases currently being processed (pending Shopify lookup)
                 </p>
               </div>
 
@@ -320,6 +323,76 @@ const ShopifyCasesReceived = () => {
               )}
             </div>
 
+            {/* Existing Cases */}
+            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+              <div className="bg-purple-50 border-b border-purple-200 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Existing Cases
+                  {existingCases.length > 0 && (
+                    <span className="ml-2 inline-block bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      {existingCases.length}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-xs text-gray-600 mt-1">
+                  Cases already found in the database
+                </p>
+              </div>
+
+              {existingCases.length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-gray-500">No existing cases found yet.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Case ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Case Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Received Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Rush
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {existingCases.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-600">
+                            {item.caseId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.caseStatus}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {item.receivedDate}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.isRush ? (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Yes - Rush
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                No
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
             {/* Invalid Cases */}
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
               <div className="bg-red-50 border-b border-red-200 px-6 py-4">
@@ -332,7 +405,7 @@ const ShopifyCasesReceived = () => {
                   )}
                 </h2>
                 <p className="text-xs text-gray-600 mt-1">
-                  Cases that failed processing or already exist in database
+                  Cases that failed processing
                 </p>
               </div>
 
