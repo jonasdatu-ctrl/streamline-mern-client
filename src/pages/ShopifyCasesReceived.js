@@ -61,7 +61,7 @@ const ShopifyCasesReceived = () => {
       for (const caseId of caseIds) {
         try {
           // Step 1: Check if case exists in database
-          const dbCheckResponse = await apiPost("/shopify/process-case", {
+          const dbCheckResponse = await apiPost("/cases/process-case", {
             caseId,
           });
 
@@ -93,7 +93,7 @@ const ShopifyCasesReceived = () => {
 
               // Step 2: Fetch order from Shopify using caseId as orderId
               try {
-                const shopifyResponse = await apiPost("/shopify/fetch-order", {
+                const shopifyResponse = await apiPost("/cases/fetch-order", {
                   orderId: caseId,
                 });
 
