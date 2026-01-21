@@ -211,7 +211,7 @@ const ShopifyCasesReceived = () => {
                 New Shopify Cases Received - "A" Cases
               </h1>
               <p className="text-gray-600">
-                Process incoming case IDs from Shopify
+                Receive case IDs from Shopify
               </p>
             </div>
           </div>
@@ -377,11 +377,11 @@ const ShopifyCasesReceived = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {item.isRush ? (
                               <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                Yes - Rush
+                                YES
                               </span>
                             ) : (
                               <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                No
+                                NO
                               </span>
                             )}
                           </td>
