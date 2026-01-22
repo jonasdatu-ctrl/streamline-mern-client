@@ -93,7 +93,7 @@ const ShopifyCasesReceived = () => {
 
               // Step 2: Fetch order from Shopify using caseId as orderId
               try {
-                const shopifyResponse = await apiPost("/cases/fetch-order", {
+                const shopifyResponse = await apiPost("/shopify/fetch-order", {
                   orderId: caseId,
                 });
 
