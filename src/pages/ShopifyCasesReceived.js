@@ -100,22 +100,81 @@ const ShopifyCasesReceived = () => {
                 if (shopifyResponse.status === "success") {
                   const orderData = shopifyResponse.data.orderData;
 
-                  // Log the order object for now (will be DB insertion soon)
                   console.log(`Order data for case ${caseId}:`, orderData);
 
-                  // Remove from processing and add to successful
-                  setProcessingCases((prev) =>
-                    prev.filter((item) => item.caseId !== caseId),
-                  );
+                  // Step 3: Create case in database
+                  try {
+                    const createCaseResponse = await apiPost(
+                      "/cases/create-case",
+                      {
+                        orderData,
+                      },
+                    );
 
-                  setSuccessfulCases((prev) => [
-                    ...prev,
-                    {
-                      caseId,
-                      orderData,
-                      status: "Successfully Processed",
-                    },
-                  ]);
+                    if (createCaseResponse.status === "success") {
+                      // Remove from processing and add to successful
+                      setProcessingCases((prev) =>
+                        prev.filter((item) => item.caseId !== caseId),
+                      );
+
+                      setSuccessfulCases((prev) => [
+                        ...prev,
+                        {
+                          caseId,
+                          orderData,
+                          status: "Case Created Successfully",
+                        },
+                      ]);
+
+                      console.log(
+                        `Case ${caseId} created in database successfully`,
+                      );
+                    } else {
+                      // Case creation failed
+                      const errorReason =
+                        createCaseResponse.message || "Case creation failed";
+                      const errorCode =
+                        createCaseResponse.code || "UNKNOWN_ERROR";
+
+                      setProcessingCases((prev) =>
+                        prev.filter((item) => item.caseId !== caseId),
+                      );
+
+                      setInvalidCases((prev) => [
+                        ...prev,
+                        {
+                          caseId,
+                          reason: errorReason,
+                          errorCode,
+                          orderData,
+                        },
+                      ]);
+
+                      console.error(
+                        `Failed to create case ${caseId}:`,
+                        errorReason,
+                      );
+                    }
+                  } catch (caseErr) {
+                    console.error(
+                      `Error creating case for ${caseId}:`,
+                      caseErr,
+                    );
+
+                    setProcessingCases((prev) =>
+                      prev.filter((item) => item.caseId !== caseId),
+                    );
+
+                    setInvalidCases((prev) => [
+                      ...prev,
+                      {
+                        caseId,
+                        reason: caseErr.message || "Failed to create case",
+                        errorCode: "CASE_CREATION_ERROR",
+                        orderData,
+                      },
+                    ]);
+                  }
                 } else {
                   // Shopify lookup failed - get reason from response
                   const errorReason =
@@ -197,7 +256,10 @@ const ShopifyCasesReceived = () => {
   };
 
   const totalProcessed =
-    processingCases.length + existingCases.length + invalidCases.length + successfulCases.length;
+    processingCases.length +
+    existingCases.length +
+    invalidCases.length +
+    successfulCases.length;
   const totalCaseIds = parseCaseIds(caseInput).length;
 
   return (
@@ -210,9 +272,7 @@ const ShopifyCasesReceived = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 New Shopify Cases Received - "A" Cases
               </h1>
-              <p className="text-gray-600">
-                Receive case IDs from Shopify
-              </p>
+              <p className="text-gray-600">Receive case IDs from Shopify</p>
             </div>
           </div>
         </div>
