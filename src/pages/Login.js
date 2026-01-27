@@ -5,6 +5,7 @@
  * This page handles user authentication using both:
  * 1. Username/Password authentication (stored in database)
  * 2. Google OAuth authentication
+ * 3. IP-based access code verification for admin/employee users
  *
  * Users must authenticate before accessing the admin dashboard.
  */
@@ -28,9 +29,12 @@ const Login = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+    accessCode: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showAccessCodeInput, setShowAccessCodeInput] = useState(false);
+  const [accessCodeMessage, setAccessCodeMessage] = useState("");
 
   /**
    * Handle input field changes
@@ -50,7 +54,7 @@ const Login = () => {
 
   /**
    * Handle credential-based login
-   * Sends username and password to backend for authentication
+   * Sends username, password, and optional access code to backend for authentication
    */
   const handleCredentialLogin = async (e) => {
     e.preventDefault();
@@ -61,6 +65,13 @@ const Login = () => {
       // Validate inputs
       if (!formData.username.trim() || !formData.password.trim()) {
         setError(MESSAGES.LOGIN_ERROR_REQUIRED);
+        setLoading(false);
+        return;
+      }
+
+      // If access code input is shown but empty, require it
+      if (showAccessCodeInput && !formData.accessCode.trim()) {
+        setError("Please enter the 6-character access code from your email");
         setLoading(false);
         return;
       }
@@ -76,18 +87,33 @@ const Login = () => {
         body: JSON.stringify({
           username: formData.username.trim(),
           password: formData.password.trim(),
+          accessCode: formData.accessCode.trim() || undefined,
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
+      // Check if access code is required
+      if (data.status === "access_code_required") {
+        setShowAccessCodeInput(true);
+        setAccessCodeMessage(
+          `${data.message}${data.data?.email ? ` (${data.data.email})` : ""}`
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (!response.ok || data.status === "error") {
         throw new Error(data.message || MESSAGES.LOGIN_ERROR_INVALID);
       }
 
       // Store JWT token in localStorage
       localStorage.setItem("authToken", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
+      
+      if (data.data.adminToken) {
+        localStorage.setItem("adminToken", data.data.adminToken);
+      }
 
       console.log("Login successful:", data.data.user.UserLogin);
       // Redirect to dashboard
@@ -131,6 +157,19 @@ const Login = () => {
 
         {/* Login Form */}
         <div className="bg-white shadow-md rounded-lg p-6">
+          {/* Access Code Message */}
+          {showAccessCodeInput && accessCodeMessage && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-md text-sm">
+              <div className="font-semibold mb-2">
+                ✉️ Access Code Required
+              </div>
+              <div>{accessCodeMessage}</div>
+              <div className="mt-2 text-xs">
+                To log in, please re-enter your credentials and the access code below
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
@@ -179,6 +218,30 @@ const Login = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
+
+            {/* Access Code Input - shown when required */}
+            {showAccessCodeInput && (
+              <div>
+                <label
+                  htmlFor="accessCode"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Access Code
+                </label>
+                <input
+                  id="accessCode"
+                  name="accessCode"
+                  type="text"
+                  placeholder="Enter 6-character code"
+                  value={formData.accessCode}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  maxLength={6}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed uppercase tracking-wider text-center text-lg font-mono"
+                  autoComplete="off"
+                />
+              </div>
+            )}
 
             {/* Sign In Button */}
             <Button
