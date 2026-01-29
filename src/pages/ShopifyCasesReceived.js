@@ -79,6 +79,7 @@ const ShopifyCasesReceived = () => {
                     caseData.caseData?.Status_Streamline_Options || "Unknown",
                   receivedDate: caseData.caseData?.Case_Date_Received || "N/A",
                   isRush: caseData.caseData?.IsRushOrder || false,
+                  lastStatusUpdate: caseData.caseData?.Last_Status_Update || "N/A",
                 },
               ]);
             } else {
@@ -418,6 +419,9 @@ const ShopifyCasesReceived = () => {
                           Received Date
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Last Status Update
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Rush
                         </th>
                       </tr>
@@ -433,6 +437,9 @@ const ShopifyCasesReceived = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             {item.receivedDate}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {item.lastStatusUpdate}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {item.isRush ? (
