@@ -48,7 +48,7 @@ const GenericCaseStatusUpdate = () => {
   const fetchStatuses = async () => {
     setLoadingStatuses(true);
     try {
-``      const data = await apiGet("/status/statuses");
+      const data = await apiGet("/status/statuses");
       setStatuses(data.data.statuses || []);
     } catch (err) {
       console.error("Error fetching statuses:", err);
