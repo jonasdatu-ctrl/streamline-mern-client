@@ -266,7 +266,7 @@ const GenericCaseStatusUpdate = () => {
                       Email Template
                     </p>
                     <p className="text-sm font-medium text-gray-900">
-                      {emailTemplate.subject || "No subject"}
+                      {emailTemplate.Subject || "No subject"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
