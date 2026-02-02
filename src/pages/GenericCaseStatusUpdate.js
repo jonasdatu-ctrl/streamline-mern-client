@@ -3,20 +3,30 @@
  * Generic Case Status Update Page Component
  *
  * Displays a page for updating case statuses.
+ * - Status dropdown selector for choosing the status
+ * - Email template display when status has an associated email
  * - Input field for case IDs (numeral only, one per line)
  * - Process button to update cases one by one
  * - Display processed cases
  * - Display cases that couldn't be found
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
+import { API_BASE_URL } from "../config/constants";
 
 /**
  * Generic Case Status Update page component
  * Shows interface for updating case statuses
  */
 const GenericCaseStatusUpdate = () => {
+  const [statuses, setStatuses] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [emailTemplate, setEmailTemplate] = useState(null);
+  const [sendEmail, setSendEmail] = useState(true);
+  const [loadingStatuses, setLoadingStatuses] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
+
   const [caseInput, setCaseInput] = useState("");
   const [processingCases, setProcessingCases] = useState([]);
   const [successfulCases, setSuccessfulCases] = useState([]);
@@ -24,6 +34,91 @@ const GenericCaseStatusUpdate = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [todayDate] = useState(new Date().toLocaleDateString());
+
+  /**
+   * Fetch all statuses on component mount
+   */
+  useEffect(() => {
+    fetchStatuses();
+  }, []);
+
+  /**
+   * Fetch statuses from the backend
+   */
+  const fetchStatuses = async () => {
+    setLoadingStatuses(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/status/statuses`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch statuses");
+      }
+
+      const data = await response.json();
+      setStatuses(data.data.statuses || []);
+    } catch (err) {
+      console.error("Error fetching statuses:", err);
+      setError(`Failed to load statuses: ${err.message}`);
+    } finally {
+      setLoadingStatuses(false);
+    }
+  };
+
+  /**
+   * Fetch email template when status changes
+   */
+  useEffect(() => {
+    if (selectedStatus) {
+      const status = statuses.find(
+        (s) => s.Status_ID === parseInt(selectedStatus),
+      );
+
+      if (status && status.Email_Template_Id) {
+        fetchEmailTemplate(status.Email_Template_Id);
+      } else {
+        setEmailTemplate(null);
+        setSendEmail(true);
+      }
+    } else {
+      setEmailTemplate(null);
+    }
+  }, [selectedStatus, statuses]);
+
+  /**
+   * Fetch email template data
+   */
+  const fetchEmailTemplate = async (templateId) => {
+    setLoadingTemplate(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/status/email-template/${templateId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch email template");
+      }
+
+      const data = await response.json();
+      setEmailTemplate(data.data.template);
+      setSendEmail(true); // Default to checked
+    } catch (err) {
+      console.error("Error fetching email template:", err);
+      setEmailTemplate(null);
+    } finally {
+      setLoadingTemplate(false);
+    }
+  };
 
   /**
    * Parse input to extract case IDs (one per line, numerals only)
@@ -41,6 +136,11 @@ const GenericCaseStatusUpdate = () => {
    */
   const handleProcess = async () => {
     const caseIds = parseCaseIds(caseInput);
+
+    if (!selectedStatus) {
+      setError("Please select a status");
+      return;
+    }
 
     if (caseIds.length === 0) {
       setError("Please enter valid case IDs (numerals only)");
@@ -106,6 +206,9 @@ const GenericCaseStatusUpdate = () => {
    * Clear the input field
    */
   const handleClear = () => {
+    setSelectedStatus("");
+    setEmailTemplate(null);
+    setSendEmail(true);
     setCaseInput("");
     setProcessingCases([]);
     setSuccessfulCases([]);
@@ -149,6 +252,67 @@ const GenericCaseStatusUpdate = () => {
           {/* Input Section - Left Column */}
           <div className="lg:col-span-1">
             <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
+              {/* Status Dropdown */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  Status
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Select a status to apply to the cases
+                </p>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  disabled={loadingStatuses}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select a status</option>
+                  {statuses.map((status) => (
+                    <option key={status.Status_ID} value={status.Status_ID}>
+                      {status.Status_Streamline_Options}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Email Template Display */}
+              {loadingTemplate && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    Loading email template...
+                  </p>
+                </div>
+              )}
+
+              {emailTemplate && !loadingTemplate && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">
+                      Email Template
+                    </p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {emailTemplate.subject || "No subject"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="sendEmail"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="sendEmail"
+                      className="text-sm text-gray-900 cursor-pointer"
+                    >
+                      Send email notification
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Case ID Input */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Case ID Input
@@ -168,7 +332,11 @@ const GenericCaseStatusUpdate = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleProcess}
-                  disabled={loading || parseCaseIds(caseInput).length === 0}
+                  disabled={
+                    loading ||
+                    !selectedStatus ||
+                    parseCaseIds(caseInput).length === 0
+                  }
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   {loading ? "Processing..." : "Process"}
