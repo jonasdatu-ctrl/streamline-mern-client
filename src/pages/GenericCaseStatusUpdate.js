@@ -13,7 +13,7 @@
 
 import React, { useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
-import { API_BASE_URL } from "../config/constants";
+import { apiGet } from "../utils/api";
 
 /**
  * Generic Case Status Update page component
@@ -48,18 +48,7 @@ const GenericCaseStatusUpdate = () => {
   const fetchStatuses = async () => {
     setLoadingStatuses(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/status/statuses`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch statuses");
-      }
-
-      const data = await response.json();
+``      const data = await apiGet("/status/statuses");
       setStatuses(data.data.statuses || []);
     } catch (err) {
       console.error("Error fetching statuses:", err);
@@ -95,21 +84,7 @@ const GenericCaseStatusUpdate = () => {
   const fetchEmailTemplate = async (templateId) => {
     setLoadingTemplate(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/status/email-template/${templateId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch email template");
-      }
-
-      const data = await response.json();
+      const data = await apiGet(`/status/email-template/${templateId}`);
       setEmailTemplate(data.data.template);
       setSendEmail(true); // Default to checked
     } catch (err) {
