@@ -13,7 +13,7 @@
 
 import React, { useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
-import { apiGet } from "../utils/api";
+import { apiGet, apiPost } from "../utils/api";
 
 /**
  * Generic Case Status Update page component
@@ -28,6 +28,7 @@ const GenericCaseStatusUpdate = () => {
   const [loadingStatuses, setLoadingStatuses] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
 
+  const [notes, setNotes] = useState("");
   const [caseInput, setCaseInput] = useState("");
   const [processingCases, setProcessingCases] = useState([]);
   const [successfulCases, setSuccessfulCases] = useState([]);
@@ -141,6 +142,16 @@ const GenericCaseStatusUpdate = () => {
       return;
     }
 
+    // Get selected status details
+    const status = statuses.find(
+      (s) => s.Status_ID === parseInt(selectedStatus),
+    );
+
+    if (!status) {
+      setError("Selected status not found");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setProcessingCases([]);
@@ -148,9 +159,9 @@ const GenericCaseStatusUpdate = () => {
     setNotFoundCases([]);
 
     try {
-      // TODO: Process each case ID sequentially
-      // For now, we'll just simulate the process
+      // Process each case ID sequentially
       for (const caseId of caseIds) {
+        // Add to processing list
         setProcessingCases((prev) => [
           ...prev,
           {
@@ -159,31 +170,56 @@ const GenericCaseStatusUpdate = () => {
           },
         ]);
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        try {
+          // Call the backend API to update case status
+          const response = await apiPost("/case-status/update", {
+            caseId,
+            statusId: parseInt(selectedStatus),
+            shipCarrierId: status.AssignCaseShipCarrierID || null,
+            markRush: status.MarkRush === 1,
+            notes: notes || "",
+            trackingNumber: "",
+          });
 
-        // Remove from processing
-        setProcessingCases((prev) =>
-          prev.filter((item) => item.caseId !== caseId),
-        );
+          // Remove from processing
+          setProcessingCases((prev) =>
+            prev.filter((item) => item.caseId !== caseId),
+          );
 
-        // For now, randomly assign to successful or not found
-        // In real implementation, this would be based on API response
-        if (Math.random() > 0.3) {
-          setSuccessfulCases((prev) => [
-            ...prev,
-            {
-              caseId,
-              status: "Ready for Update",
-              timestamp: new Date().toLocaleTimeString(),
-            },
-          ]);
-        } else {
+          if (response.status === "success") {
+            // Add to successful cases
+            setSuccessfulCases((prev) => [
+              ...prev,
+              {
+                caseId,
+                status: "Updated Successfully",
+                timestamp: new Date().toLocaleTimeString(),
+              },
+            ]);
+          } else {
+            // Add to not found cases
+            setNotFoundCases((prev) => [
+              ...prev,
+              {
+                caseId,
+                reason: response.message || "Unknown error",
+              },
+            ]);
+          }
+        } catch (err) {
+          console.error(`Error processing case ${caseId}:`, err);
+
+          // Remove from processing
+          setProcessingCases((prev) =>
+            prev.filter((item) => item.caseId !== caseId),
+          );
+
+          // Add to not found cases with error details
           setNotFoundCases((prev) => [
             ...prev,
             {
               caseId,
-              reason: "Case not found in database",
+              reason: err.message || "Failed to update case status",
             },
           ]);
         }
@@ -203,6 +239,7 @@ const GenericCaseStatusUpdate = () => {
     setSelectedStatus("");
     setEmailTemplate(null);
     setSendEmail(true);
+    setNotes("");
     setCaseInput("");
     setProcessingCases([]);
     setSuccessfulCases([]);
@@ -331,6 +368,22 @@ const GenericCaseStatusUpdate = () => {
                   </div>
                 </div>
               )}
+
+              {/* Notes Input */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  Notes
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Optional notes to add to the case transaction
+                </p>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Enter notes here..."
+                  className="w-full h-24 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                />
+              </div>
 
               {/* Case ID Input */}
               <div>
