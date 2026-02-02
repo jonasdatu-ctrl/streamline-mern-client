@@ -21,6 +21,7 @@ import { apiGet } from "../utils/api";
  */
 const GenericCaseStatusUpdate = () => {
   const [statuses, setStatuses] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [emailTemplate, setEmailTemplate] = useState(null);
   const [sendEmail, setSendEmail] = useState(true);
@@ -227,6 +228,23 @@ const GenericCaseStatusUpdate = () => {
           {/* Input Section - Left Column */}
           <div className="lg:col-span-1">
             <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
+              {/* Filter Status Input */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  Filter Status
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Search by status name or ID
+                </p>
+                <input
+                  type="text"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  placeholder="Type to filter statuses..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
               {/* Status Dropdown */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -242,11 +260,20 @@ const GenericCaseStatusUpdate = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select a status</option>
-                  {statuses.map((status) => (
-                    <option key={status.Status_ID} value={status.Status_ID}>
-                      {status.Status_Streamline_Options}
-                    </option>
-                  ))}
+                  {statuses
+                    .filter((status) => {
+                      if (!statusFilter) return true;
+                      const filter = statusFilter.toLowerCase();
+                      const name =
+                        status.Status_Streamline_Options.toLowerCase();
+                      const id = String(status.Status_ID);
+                      return name.includes(filter) || id.includes(filter);
+                    })
+                    .map((status) => (
+                      <option key={status.Status_ID} value={status.Status_ID}>
+                        {status.Status_Streamline_Options} ({status.Status_ID})
+                      </option>
+                    ))}
                 </select>
               </div>
 
