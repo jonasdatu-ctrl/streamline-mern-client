@@ -36,7 +36,7 @@ export const MESSAGES = {
   LOGIN_ERROR_NETWORK: "Network error. Please try again.",
   LOGIN_SUCCESS: "Login successful",
 };
-
+c
 /**
  * Navigation menu items with nested structure
  */
