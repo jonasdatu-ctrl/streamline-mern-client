@@ -97,6 +97,24 @@ const GenericCaseStatusUpdate = () => {
   };
 
   /**
+   * Auto-select status if filter results in only one option
+   */
+  useEffect(() => {
+    if (statusFilter && statuses.length > 0) {
+      const filteredStatuses = statuses.filter((status) => {
+        const filter = statusFilter.toLowerCase();
+        const name = status.Status_Streamline_Options.toLowerCase();
+        const id = String(status.Status_ID);
+        return name.includes(filter) || id.includes(filter);
+      });
+
+      if (filteredStatuses.length === 1) {
+        setSelectedStatus(String(filteredStatuses[0].Status_ID));
+      }
+    }
+  }, [statusFilter, statuses]);
+
+  /**
    * Parse input to extract case IDs (one per line, numerals only)
    */
   const parseCaseIds = (input) => {
