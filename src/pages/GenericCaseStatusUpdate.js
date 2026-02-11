@@ -158,10 +158,6 @@ const GenericCaseStatusUpdate = () => {
     setSuccessfulCases([]);
     setNotFoundCases([]);
 
-    console.log("MarkRush raw value:", status.MarkRush);
-    console.log("Type:", typeof status.MarkRush);
-    console.log("Equality check:", status.MarkRush === 1);
-
     try {
       // Process each case ID sequentially
       for (const caseId of caseIds) {
@@ -180,7 +176,7 @@ const GenericCaseStatusUpdate = () => {
             caseId,
             statusId: parseInt(selectedStatus),
             shipCarrierId: status.AssignCaseShipCarrierID || null,
-            markRush: status.MarkRush === 1,
+            markRush: status.MarkRush,
             notes: notes || "",
             trackingNumber: "",
           });
