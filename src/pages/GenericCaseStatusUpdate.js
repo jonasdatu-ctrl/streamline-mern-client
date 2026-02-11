@@ -176,7 +176,7 @@ const GenericCaseStatusUpdate = () => {
             caseId,
             statusId: parseInt(selectedStatus),
             shipCarrierId: status.AssignCaseShipCarrierID || null,
-            markRush: status.MarkRush === 1,
+            markRush: Boolean(status.MarkRush?.[0]),
             notes: notes || "",
             trackingNumber: "",
           });
@@ -495,7 +495,7 @@ const GenericCaseStatusUpdate = () => {
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
               <div className="bg-red-50 border-b border-red-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Cases Not Found
+                  Cases Not Processed
                   {notFoundCases.length > 0 && (
                     <span className="ml-2 inline-block bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                       {notFoundCases.length}
@@ -503,13 +503,13 @@ const GenericCaseStatusUpdate = () => {
                   )}
                 </h2>
                 <p className="text-xs text-gray-600 mt-1">
-                  Cases that could not be found in the database
+                  Cases that were not processed successfully
                 </p>
               </div>
 
               {notFoundCases.length === 0 ? (
                 <div className="p-6 text-center">
-                  <p className="text-gray-500">No cases not found yet.</p>
+                  <p className="text-gray-500">No cases failed yet.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -545,7 +545,7 @@ const GenericCaseStatusUpdate = () => {
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
               <div className="bg-green-50 border-b border-green-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Ready for Update
+                  Cases processed successfully
                   {successfulCases.length > 0 && (
                     <span className="ml-2 inline-block bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                       {successfulCases.length}
@@ -553,7 +553,7 @@ const GenericCaseStatusUpdate = () => {
                   )}
                 </h2>
                 <p className="text-xs text-gray-600 mt-1">
-                  Cases found and ready for status update
+                  Cases that were processed successfully
                 </p>
               </div>
 
