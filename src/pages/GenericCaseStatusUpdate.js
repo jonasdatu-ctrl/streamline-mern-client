@@ -158,6 +158,10 @@ const GenericCaseStatusUpdate = () => {
     setSuccessfulCases([]);
     setNotFoundCases([]);
 
+    console.log("MarkRush raw value:", status.MarkRush);
+    console.log("Type:", typeof status.MarkRush);
+    console.log("Equality check:", status.MarkRush === 1);
+
     try {
       // Process each case ID sequentially
       for (const caseId of caseIds) {
@@ -172,10 +176,6 @@ const GenericCaseStatusUpdate = () => {
 
         try {
           // Call the backend API to update case status
-          console.log("MarkRush raw value:", status.MarkRush);
-          console.log("Type:", typeof status.MarkRush);
-          console.log("Equality check:", status.MarkRush === 1);
-
           const response = await apiPost("/case-status/update", {
             caseId,
             statusId: parseInt(selectedStatus),
