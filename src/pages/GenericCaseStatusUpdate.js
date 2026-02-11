@@ -176,7 +176,7 @@ const GenericCaseStatusUpdate = () => {
             caseId,
             statusId: parseInt(selectedStatus),
             shipCarrierId: status.AssignCaseShipCarrierID || null,
-            markRush: Boolean(status.MarkRush?.[0]),
+            markRush: status.MarkRush === 1,
             notes: notes || "",
             trackingNumber: "",
           });
