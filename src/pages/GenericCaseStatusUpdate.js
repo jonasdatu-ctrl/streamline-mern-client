@@ -28,6 +28,7 @@ const GenericCaseStatusUpdate = () => {
   const [loadingStatuses, setLoadingStatuses] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
 
+  const [batchProcessing, setBatchProcessing] = useState(false);
   const [notes, setNotes] = useState("");
   const [caseInput, setCaseInput] = useState("");
   const [processingCases, setProcessingCases] = useState([]);
@@ -142,6 +143,11 @@ const GenericCaseStatusUpdate = () => {
       return;
     }
 
+    if (!batchProcessing && caseIds.length > 1) {
+      setError("Batch processing is disabled. Only one case ID allowed.");
+      return;
+    }
+
     // Get selected status details
     const status = statuses.find(
       (s) => s.Status_ID === parseInt(selectedStatus),
@@ -239,6 +245,7 @@ const GenericCaseStatusUpdate = () => {
     setSelectedStatus("");
     setEmailTemplate(null);
     setSendEmail(true);
+    setBatchProcessing(false);
     setNotes("");
     setCaseInput("");
     setProcessingCases([]);
@@ -254,6 +261,12 @@ const GenericCaseStatusUpdate = () => {
     let value = e.target.value;
     // Allow digits and newlines only
     value = value.replace(/[^\d\n]/g, "");
+
+    // If batch processing is disabled, only allow single line
+    if (!batchProcessing) {
+      value = value.replace(/\n/g, "");
+    }
+
     setCaseInput(value);
   };
 
@@ -391,15 +404,44 @@ const GenericCaseStatusUpdate = () => {
                   Case ID Input
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Enter case IDs (numerals only). One per line. Barcode scans
-                  automatically add newlines.
+                  {batchProcessing
+                    ? "Enter case IDs (numerals only). One per line. Barcode scans automatically add newlines."
+                    : "Enter a single case ID (numerals only). Enable batch processing to enter multiple IDs."}
                 </p>
-                <textarea
-                  value={caseInput}
-                  onChange={handleInputChange}
-                  placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
-                  className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
-                />
+
+                {/* Batch Processing Checkbox */}
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="batchProcessing"
+                    checked={batchProcessing}
+                    onChange={(e) => setBatchProcessing(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor="batchProcessing"
+                    className="text-sm text-gray-900 cursor-pointer"
+                  >
+                    Enable batch processing
+                  </label>
+                </div>
+
+                {batchProcessing ? (
+                  <textarea
+                    value={caseInput}
+                    onChange={handleInputChange}
+                    placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
+                    className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={caseInput}
+                    onChange={handleInputChange}
+                    placeholder="Enter case ID here"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  />
+                )}
               </div>
 
               <div className="flex gap-2">
