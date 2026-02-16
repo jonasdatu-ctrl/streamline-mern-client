@@ -38,6 +38,24 @@ const GenericCaseStatusUpdate = () => {
   const [error, setError] = useState(null);
   const [todayDate] = useState(new Date().toLocaleDateString());
 
+  const getFilteredStatuses = () => {
+    return statuses.filter((status) => {
+      if (status.Status_ID === 10) {
+        return false;
+      }
+
+      if (!statusFilter) {
+        return true;
+      }
+
+      const filter = statusFilter.toLowerCase();
+      const name = status.Status_Streamline_Options.toLowerCase();
+      const id = String(status.Status_ID);
+
+      return name.includes(filter) || id.includes(filter);
+    });
+  };
+
   /**
    * Fetch all statuses on component mount
    */
@@ -103,12 +121,7 @@ const GenericCaseStatusUpdate = () => {
    */
   useEffect(() => {
     if (statusFilter && statuses.length > 0) {
-      const filteredStatuses = statuses.filter((status) => {
-        const filter = statusFilter.toLowerCase();
-        const name = status.Status_Streamline_Options.toLowerCase();
-        const id = String(status.Status_ID);
-        return name.includes(filter) || id.includes(filter);
-      });
+      const filteredStatuses = getFilteredStatuses();
 
       if (filteredStatuses.length === 1) {
         setSelectedStatus(String(filteredStatuses[0].Status_ID));
@@ -181,6 +194,7 @@ const GenericCaseStatusUpdate = () => {
           const response = await apiPost("/case-status/update", {
             caseId,
             statusId: parseInt(selectedStatus),
+            statusName: status.Status_Streamline_Options,
             shipCarrierId: status.AssignCaseShipCarrierID || null,
             markRush: status.MarkRush,
             notes: notes || "",
@@ -328,20 +342,11 @@ const GenericCaseStatusUpdate = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select a status</option>
-                  {statuses
-                    .filter((status) => {
-                      if (!statusFilter) return true;
-                      const filter = statusFilter.toLowerCase();
-                      const name =
-                        status.Status_Streamline_Options.toLowerCase();
-                      const id = String(status.Status_ID);
-                      return name.includes(filter) || id.includes(filter);
-                    })
-                    .map((status) => (
-                      <option key={status.Status_ID} value={status.Status_ID}>
-                        {status.Status_Streamline_Options} ({status.Status_ID})
-                      </option>
-                    ))}
+                  {getFilteredStatuses().map((status) => (
+                    <option key={status.Status_ID} value={status.Status_ID}>
+                      {status.Status_Streamline_Options} ({status.Status_ID})
+                    </option>
+                  ))}
                 </select>
               </div>
 
