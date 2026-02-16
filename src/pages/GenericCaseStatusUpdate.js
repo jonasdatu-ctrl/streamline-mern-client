@@ -195,6 +195,7 @@ const GenericCaseStatusUpdate = () => {
             caseId,
             statusId: parseInt(selectedStatus),
             statusName: status.Status_Streamline_Options,
+            klaviyoEventName: status.KlaviyoEventName || "",
             shipCarrierId: status.AssignCaseShipCarrierID || null,
             markRush: status.MarkRush,
             notes: notes || "",
