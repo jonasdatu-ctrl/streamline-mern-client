@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, googleProvider } from "../config/firebase";
 import { ROUTES, MESSAGES } from "../config/constants";
 import Button from "../components/common/Button";
+import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL;
@@ -26,6 +27,7 @@ const API_BASE_URL =
  */
 const Login = () => {
   const navigate = useNavigate();
+  const { setLocalAuth } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -110,6 +112,8 @@ const Login = () => {
       // Store JWT token in localStorage
       localStorage.setItem("authToken", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
+
+      setLocalAuth(data.data.user);
       
       if (data.data.adminToken) {
         localStorage.setItem("adminToken", data.data.adminToken);

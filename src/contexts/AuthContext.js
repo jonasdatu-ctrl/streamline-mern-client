@@ -49,6 +49,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authType, setAuthType] = useState(null); // 'firebase' or 'local'
 
+  const setLocalAuth = (user) => {
+    setCurrentUser(user || null);
+    setAuthType(user ? "local" : null);
+  };
+
   useEffect(() => {
     /**
      * Combined authentication check
@@ -123,6 +128,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     loading,
     authType,
+    setLocalAuth,
     logout,
   };
 
