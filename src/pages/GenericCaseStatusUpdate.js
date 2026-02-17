@@ -203,6 +203,8 @@ const GenericCaseStatusUpdate = () => {
             shopifyTags: status.ShopifyTags || "",
             shipCarrierId: status.AssignCaseShipCarrierID || null,
             markRush: status.MarkRush,
+            emailTemplateId: status.Email_Template_Id || null,
+            sendEmail,
             ticketStatus,
             ticketScheduleStatusId:
               ticketStatus === "scheduled"
