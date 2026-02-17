@@ -18,8 +18,7 @@ import { ROUTES, MESSAGES } from "../config/constants";
 import Button from "../components/common/Button";
 import { useAuth } from "../contexts/AuthContext";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL;
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 /**
  * Login page component
@@ -99,7 +98,7 @@ const Login = () => {
       if (data.status === "access_code_required") {
         setShowAccessCodeInput(true);
         setAccessCodeMessage(
-          `${data.message}${data.data?.email ? ` (${data.data.email})` : ""}`
+          `${data.message}${data.data?.email ? ` (${data.data.email})` : ""}`,
         );
         setLoading(false);
         return;
@@ -114,7 +113,7 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(data.data.user));
 
       setLocalAuth(data.data.user);
-      
+
       if (data.data.adminToken) {
         localStorage.setItem("adminToken", data.data.adminToken);
       }
@@ -164,12 +163,11 @@ const Login = () => {
           {/* Access Code Message */}
           {showAccessCodeInput && accessCodeMessage && (
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-md text-sm">
-              <div className="font-semibold mb-2">
-                ✉️ Access Code Required
-              </div>
+              <div className="font-semibold mb-2">✉️ Access Code Required</div>
               <div>{accessCodeMessage}</div>
               <div className="mt-2 text-xs">
-                To log in, please re-enter your credentials and the access code below
+                To log in, please re-enter your credentials and the access code
+                below
               </div>
             </div>
           )}
