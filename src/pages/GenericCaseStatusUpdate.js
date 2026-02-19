@@ -24,6 +24,7 @@ const GenericCaseStatusUpdate = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [emailTemplate, setEmailTemplate] = useState(null);
+  const [ticketStatus, setTicketStatus] = useState("closed");
   const [sendEmail, setSendEmail] = useState(true);
   const [loadingStatuses, setLoadingStatuses] = useState(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
@@ -89,13 +90,16 @@ const GenericCaseStatusUpdate = () => {
       );
 
       if (status && status.Email_Template_Id) {
+        setTicketStatus("closed");
         fetchEmailTemplate(status.Email_Template_Id);
       } else {
         setEmailTemplate(null);
         setSendEmail(true);
+        setTicketStatus("closed");
       }
     } else {
       setEmailTemplate(null);
+      setTicketStatus("closed");
     }
   }, [selectedStatus, statuses]);
 
@@ -199,6 +203,13 @@ const GenericCaseStatusUpdate = () => {
             shopifyTags: status.ShopifyTags || "",
             shipCarrierId: status.AssignCaseShipCarrierID || null,
             markRush: status.MarkRush,
+            emailTemplateId: status.Email_Template_Id || null,
+            sendEmail,
+            ticketStatus,
+            ticketScheduleStatusId:
+              ticketStatus === "scheduled"
+                ? status.Default_Scheduled_Status_ID || null
+                : null,
             notes: notes || "",
             trackingNumber: "",
           });
@@ -260,6 +271,7 @@ const GenericCaseStatusUpdate = () => {
   const handleClear = () => {
     setSelectedStatus("");
     setEmailTemplate(null);
+    setTicketStatus("closed");
     setSendEmail(true);
     setBatchProcessing(false);
     setNotes("");
@@ -289,6 +301,15 @@ const GenericCaseStatusUpdate = () => {
   const totalProcessed =
     processingCases.length + successfulCases.length + notFoundCases.length;
   const totalCaseIds = parseCaseIds(caseInput).length;
+  const selectedStatusDetails = selectedStatus
+    ? statuses.find((s) => s.Status_ID === parseInt(selectedStatus, 10))
+    : null;
+  const shouldShowTicketStatus = Boolean(
+    selectedStatusDetails && selectedStatusDetails.Email_Template_Id,
+  );
+  const shouldShowScheduledTicketStatus = Boolean(
+    selectedStatusDetails && selectedStatusDetails.Default_Scheduled_Status_ID,
+  );
 
   return (
     <Layout showLogout={true} title="Generic Case Status Update">
@@ -386,6 +407,30 @@ const GenericCaseStatusUpdate = () => {
                       Send email notification
                     </label>
                   </div>
+                </div>
+              )}
+
+              {/* Ticket Status Dropdown */}
+              {shouldShowTicketStatus && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Ticket Status
+                  </label>
+                  <select
+                    id="gcTicketStatus"
+                    value={ticketStatus}
+                    onChange={(e) => setTicketStatus(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="closed">Closed</option>
+                    <option value="open">Open</option>
+                    {shouldShowScheduledTicketStatus && (
+                      <option value="scheduled">Scheduled</option>
+                    )}
+                    <option value="closeall">
+                      Close Open Tickets for this Email Template
+                    </option>
+                  </select>
                 </div>
               )}
 
