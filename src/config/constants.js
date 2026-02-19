@@ -41,7 +41,7 @@ export const MESSAGES = {
  * Navigation menu items with nested structure
  */
 export const NAV_ITEMS = [
-  // { label: "Home", key: "home", route: ROUTES.DASHBOARD },
+  { label: "Home", key: "home", route: ROUTES.DASHBOARD },
   {
     label: "Transaction Manager (Tags)",
     key: "transaction-manager",
@@ -51,11 +51,11 @@ export const NAV_ITEMS = [
         key: "shopify-cases-received",
         route: ROUTES.SHOPIFY_CASES_RECEIVED,
       },
-      // {
-      //   label: "Generic Case Status Update",
-      //   key: "generic-case-status-update",
-      //   route: ROUTES.GENERIC_CASE_STATUS_UPDATE,
-      // },
+      {
+        label: "Generic Case Status Update",
+        key: "generic-case-status-update",
+        route: ROUTES.GENERIC_CASE_STATUS_UPDATE,
+      },
       // {
       //   label: "Cases Shipped to Customer",
       //   key: "cases-shipped-to-customer",
