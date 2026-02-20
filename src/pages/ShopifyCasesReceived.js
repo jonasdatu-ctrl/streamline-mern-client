@@ -319,79 +319,81 @@ const ShopifyCasesReceived = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Input Section - Left Column */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
-              <div>
+            <div className="sticky top-0 space-y-4">
+              <div className="bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Case ID Input
+                  </label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Enter case IDs (numerals only). One per line. Barcode scans
+                    automatically add newlines.
+                  </p>
+                  <textarea
+                    value={caseInput}
+                    onChange={handleInputChange}
+                    placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
+                    className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleProcess}
+                    disabled={loading || parseCaseIds(caseInput).length === 0}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    {loading ? "Processing..." : "Process"}
+                  </button>
+                  <button
+                    onClick={handleClear}
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Today's Date:
+                    </span>{" "}
+                    {todayDate}
+                  </p>
+                  <div className="text-xs text-gray-600">
+                    <p>Total IDs: {totalCaseIds}</p>
+                    <p>Processed: {totalProcessed}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white shadow-sm rounded-lg p-6">
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
-                  Case ID Input
+                  User Stats
                 </label>
-                <p className="text-xs text-gray-500 mb-3">
-                  Enter case IDs (numerals only). One per line. Barcode scans
-                  automatically add newlines.
-                </p>
-                <textarea
-                  value={caseInput}
-                  onChange={handleInputChange}
-                  placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
-                  className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
-                />
-              </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={handleProcess}
-                  disabled={loading || parseCaseIds(caseInput).length === 0}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
-                >
-                  {loading ? "Processing..." : "Process"}
-                </button>
-                <button
-                  onClick={handleClear}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors font-medium"
-                >
-                  Clear
-                </button>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-800">{error}</p>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Logged-in user:
+                    </span>{" "}
+                    {statsUserName}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Cases received by user today:
+                    </span>{" "}
+                    {statsLoading ? "Loading..." : totalCaseReceivedToday}
+                  </p>
                 </div>
-              )}
-
-              {/* Stats */}
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500 mb-1">
-                  <span className="font-semibold text-gray-900">
-                    Today's Date:
-                  </span>{" "}
-                  {todayDate}
-                </p>
-                <div className="text-xs text-gray-600">
-                  <p>Total IDs: {totalCaseIds}</p>
-                  <p>Processed: {totalProcessed}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white shadow-sm rounded-lg p-6">
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
-                User Stats
-              </label>
-
-              <div className="space-y-2 text-sm text-gray-700">
-                <p className="text-xs text-gray-500 mb-1">
-                  <span className="font-semibold text-gray-900">
-                    Logged-in user:
-                  </span>{" "}
-                  {statsUserName}
-                </p>
-                <p className="text-xs text-gray-500 mb-1">
-                  <span className="font-semibold text-gray-900">
-                    Cases received by user today:
-                  </span>{" "}
-                  {statsLoading ? "Loading..." : totalCaseReceivedToday}
-                </p>
               </div>
             </div>
           </div>
