@@ -41,7 +41,7 @@ export const MESSAGES = {
  * Navigation menu items with nested structure
  */
 export const NAV_ITEMS = [
-  // { label: "Home", key: "home", route: ROUTES.DASHBOARD },
+  { label: "Home", key: "home", route: ROUTES.DASHBOARD },
   {
     label: "Transaction Manager (Tags)",
     key: "transaction-manager",
