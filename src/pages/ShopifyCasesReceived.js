@@ -375,20 +375,20 @@ const ShopifyCasesReceived = () => {
             </div>
 
             <div className="bg-white shadow-sm rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
                 User Stats
-              </h2>
+              </label>
 
               <div className="space-y-2 text-sm text-gray-700">
-                <p>
+                <p className="text-xs text-gray-500 mb-1">
                   <span className="font-semibold text-gray-900">
-                    Currently logged-in user:
+                    Logged-in user:
                   </span>{" "}
                   {statsUserName}
                 </p>
-                <p>
+                <p className="text-xs text-gray-500 mb-1">
                   <span className="font-semibold text-gray-900">
-                    Total Case Received for today:
+                    Cases received by user today:
                   </span>{" "}
                   {statsLoading ? "Loading..." : totalCaseReceivedToday}
                 </p>
