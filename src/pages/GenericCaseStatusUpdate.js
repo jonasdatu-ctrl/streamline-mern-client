@@ -220,11 +220,20 @@ const GenericCaseStatusUpdate = () => {
           );
 
           if (response.status === "success") {
+            const resultData = response.data || {};
+            const resultFlags = resultData.processingResults || {};
+
             // Add to successful cases
             setSuccessfulCases((prev) => [
               ...prev,
               {
                 caseId,
+                customerName: resultData.customerName || "N/A",
+                ticketCreated: resultFlags.ticketCreated || "na",
+                orderTimeline: resultFlags.orderTimeline || "na",
+                orderTag: resultFlags.orderTag || "na",
+                klaviyoEvent: resultFlags.klaviyoEvent || "na",
+                emailSent: resultFlags.emailSent || "na",
                 status: "Updated Successfully",
                 timestamp: new Date().toLocaleTimeString(),
               },
@@ -301,6 +310,31 @@ const GenericCaseStatusUpdate = () => {
   const totalProcessed =
     processingCases.length + successfulCases.length + notFoundCases.length;
   const totalCaseIds = parseCaseIds(caseInput).length;
+  const renderResultStatus = (value) => {
+    const normalized = String(value || "na").toLowerCase();
+
+    if (normalized === "check") {
+      return (
+        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+          ✓
+        </span>
+      );
+    }
+
+    if (normalized === "x") {
+      return (
+        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+          X
+        </span>
+      );
+    }
+
+    return (
+      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+        NA
+      </span>
+    );
+  };
   const selectedStatusDetails = selectedStatus
     ? statuses.find((s) => s.Status_ID === parseInt(selectedStatus, 10))
     : null;
@@ -666,6 +700,24 @@ const GenericCaseStatusUpdate = () => {
                           Case ID
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Customer Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Ticket Created
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Order Timeline
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Order Tag
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Klaviyo Event
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Email Sent
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -678,6 +730,24 @@ const GenericCaseStatusUpdate = () => {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                             {item.caseId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.customerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderResultStatus(item.ticketCreated)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderResultStatus(item.orderTimeline)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderResultStatus(item.orderTag)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderResultStatus(item.klaviyoEvent)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {renderResultStatus(item.emailSent)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.status}
