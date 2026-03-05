@@ -229,6 +229,7 @@ const GenericCaseStatusUpdate = () => {
               {
                 caseId,
                 customerName: resultData.customerName || "N/A",
+                isRush: Boolean(resultData.isRush),
                 ticketCreated: resultFlags.ticketCreated || "na",
                 orderTimeline: resultFlags.orderTimeline || "na",
                 orderTag: resultFlags.orderTag || "na",
@@ -703,6 +704,9 @@ const GenericCaseStatusUpdate = () => {
                           Customer Name
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Rush
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Ticket Created
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -733,6 +737,17 @@ const GenericCaseStatusUpdate = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.customerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.isRush ? (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                YES
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                NO
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {renderResultStatus(item.ticketCreated)}
