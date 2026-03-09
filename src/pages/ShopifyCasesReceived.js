@@ -102,12 +102,18 @@ const ShopifyCasesReceived = () => {
             const caseData = dbCheckResponse.data;
 
             if (caseData.exists) {
+              const firstName =
+                caseData.caseData?.Case_Patient_First_Name?.trim() || "";
+              const lastName =
+                caseData.caseData?.Case_Patient_Last_Name?.trim() || "";
+
               // Case exists in database - add to existing cases
               setExistingCases((prev) => [
                 ...prev,
                 {
                   caseId,
                   caseData: caseData.caseData,
+                  customerName: [firstName, lastName].filter(Boolean).join(" ") || "N/A",
                   caseStatus:
                     caseData.caseData?.Status_Streamline_Options || "Unknown",
                   receivedDate: caseData.caseData?.Case_Date_Received || "N/A",
@@ -473,6 +479,9 @@ const ShopifyCasesReceived = () => {
                           Case ID
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Customer Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Case Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -491,6 +500,9 @@ const ShopifyCasesReceived = () => {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-600">
                             {item.caseId}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.customerName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.caseStatus}
