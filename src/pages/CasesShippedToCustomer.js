@@ -17,6 +17,7 @@ import { apiGet, apiPost } from "../utils/api";
 const BARCODE_LENGTH_22 = 22;
 const BARCODE_LENGTH_32 = 32;
 const BARCODE_LENGTH_34 = 34;
+const BARCODE_ERROR_MESSAGE = "Invalid barcode. Please rescan.";
 
 const parseBarcodeToTracking = (barcode) => {
   const trimmed = String(barcode || "").trim();
@@ -105,20 +106,56 @@ const CasesShippedToCustomer = () => {
     }
   };
 
-  const handleBarcodeKeyDown = (event) => {
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    const parsedTracking = parseBarcodeToTracking(barcodeValue);
+  const validateBarcodeInput = (rawBarcode) => {
+    const parsedTracking = parseBarcodeToTracking(rawBarcode);
     if (!parsedTracking) {
-      setError("Invalid barcode. Please rescan.");
+      setError(BARCODE_ERROR_MESSAGE);
       setTrackingNumber("");
       return;
     }
 
-    setError("");
     setTrackingNumber(parsedTracking);
+    setError((prev) => (prev === BARCODE_ERROR_MESSAGE ? "" : prev));
+  };
+
+  useEffect(() => {
+    if (!isFedExCarrier) {
+      return;
+    }
+
+    const trimmedBarcode = String(barcodeValue || "").trim();
+    if (!trimmedBarcode) {
+      return;
+    }
+
+    const hasExpectedLength = [
+      BARCODE_LENGTH_22,
+      BARCODE_LENGTH_32,
+      BARCODE_LENGTH_34,
+    ].includes(trimmedBarcode.length);
+
+    if (!hasExpectedLength) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      validateBarcodeInput(trimmedBarcode);
+    }, 250);
+
+    return () => clearTimeout(timeoutId);
+  }, [barcodeValue, isFedExCarrier]);
+
+  const handleBarcodeBlur = () => {
+    if (!isFedExCarrier) {
+      return;
+    }
+
+    const trimmedBarcode = String(barcodeValue || "").trim();
+    if (!trimmedBarcode) {
+      return;
+    }
+
+    validateBarcodeInput(trimmedBarcode);
   };
 
   const handleGenerateTracking = () => {
@@ -379,7 +416,7 @@ const CasesShippedToCustomer = () => {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
               <div className="bg-green-50 border-b border-green-200 px-6 py-4">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold text-gray-900">
@@ -391,7 +428,7 @@ const CasesShippedToCustomer = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto border border-gray-200 rounded-lg mb-6">
+              <div className="overflow-x-auto border-b border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -434,87 +471,89 @@ const CasesShippedToCustomer = () => {
                 </table>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Carrier ID
-                  </label>
-                  <select
-                    value={selectedCarrierId}
-                    onChange={handleCarrierChange}
-                    disabled={loadingCarriers || submitting}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {(carriers || []).map((carrier) => (
-                      <option key={carrier.ID} value={carrier.ID}>
-                        {carrier.Name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Carrier ID
+                    </label>
+                    <select
+                      value={selectedCarrierId}
+                      onChange={handleCarrierChange}
+                      disabled={loadingCarriers || submitting}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {(carriers || []).map((carrier) => (
+                        <option key={carrier.ID} value={carrier.ID}>
+                          {carrier.Name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Barcode
-                  </label>
-                  <input
-                    type="text"
-                    value={barcodeValue}
-                    onChange={(event) => setBarcodeValue(event.target.value)}
-                    onKeyDown={handleBarcodeKeyDown}
-                    disabled={!isFedExCarrier || submitting}
-                    placeholder="FedEx scan and press Enter"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Tracking Number
-                  </label>
-                  <div className="flex gap-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Barcode
+                    </label>
                     <input
                       type="text"
-                      value={trackingNumber}
-                      onChange={(event) =>
-                        setTrackingNumber(event.target.value)
-                      }
-                      disabled={submitting}
-                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={barcodeValue}
+                      onChange={(event) => setBarcodeValue(event.target.value)}
+                      onBlur={handleBarcodeBlur}
+                      disabled={!isFedExCarrier || submitting}
+                      placeholder="FedEx barcode"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                     />
-                    <button
-                      type="button"
-                      onClick={handleGenerateTracking}
-                      disabled={!isCATN || submitting}
-                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-                    >
-                      Generate
-                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Tracking Number
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={trackingNumber}
+                        onChange={(event) =>
+                          setTrackingNumber(event.target.value)
+                        }
+                        disabled={submitting}
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGenerateTracking}
+                        disabled={!isCATN || submitting}
+                        className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                      >
+                        Generate
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => submitShipment(true)}
-                  disabled={submitting || validatingCases}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  Ship and Print Manifest
-                </button>
-                <button
-                  type="button"
-                  onClick={() => submitShipment(false)}
-                  disabled={submitting || validatingCases}
-                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  Ship Another with Same Carrier
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => submitShipment(true)}
+                    disabled={submitting || validatingCases}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Ship and Print Manifest
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submitShipment(false)}
+                    disabled={submitting || validatingCases}
+                    className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Ship Another with Same Carrier
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
               <div className="bg-red-50 border-b border-red-200 px-6 py-4">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold text-gray-900">
@@ -525,7 +564,7 @@ const CasesShippedToCustomer = () => {
                   </span>
                 </div>
               </div>
-              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
