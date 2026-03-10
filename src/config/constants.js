@@ -56,11 +56,11 @@ export const NAV_ITEMS = [
         key: "generic-case-status-update",
         route: ROUTES.GENERIC_CASE_STATUS_UPDATE,
       },
-      // {
-      //   label: "Cases Shipped to Customer",
-      //   key: "cases-shipped-to-customer",
-      //   route: ROUTES.CASES_SHIPPED_TO_CUSTOMER,
-      // },
+      {
+        label: "Cases Shipped to Customer",
+        key: "cases-shipped-to-customer",
+        route: ROUTES.CASES_SHIPPED_TO_CUSTOMER,
+      },
     ],
   },
   // { label: "Users", key: "users", route: null },

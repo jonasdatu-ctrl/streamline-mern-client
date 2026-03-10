@@ -1,398 +1,526 @@
 // src/pages/CasesShippedToCustomer.js
 /**
- * Cases Shipped to Customer Page Component
+ * Cases Shipped to Customer
  *
- * Tracks and manages cases that have been resolved and shipped back to customers.
- * Provides shipping tracking, delivery confirmation, and customer communication tools.
+ * Legacy flow migrated to React:
+ * - Load outbound carriers
+ * - Barcode parsing (FedEx)
+ * - Generate CATN tracking when available
+ * - Validate case IDs against approval/open-ticket rules
+ * - Ship cases with optional manifest print
  */
 
-import React, { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/layout/Layout";
-import Button from "../components/common/Button";
+import { apiGet, apiPost } from "../utils/api";
 
-/**
- * Cases Shipped to Customer page component
- * Manages shipped cases and delivery tracking
- */
+const BARCODE_LENGTH_22 = 22;
+const BARCODE_LENGTH_32 = 32;
+const BARCODE_LENGTH_34 = 34;
+
+const parseBarcodeToTracking = (barcode) => {
+  const trimmed = String(barcode || "").trim();
+
+  if (trimmed.length === BARCODE_LENGTH_22) {
+    return trimmed.substring(7);
+  }
+
+  if (trimmed.length === BARCODE_LENGTH_32) {
+    return trimmed.substring(16, 28);
+  }
+
+  if (trimmed.length === BARCODE_LENGTH_34) {
+    return trimmed.substring(22);
+  }
+
+  return null;
+};
+
+const buildGeneratedTrackingNumber = (carrierId) => {
+  const now = new Date();
+  return `${carrierId}-${now.getFullYear()}${now.getMonth() + 1}${now.getDate()}-${Math.floor(Math.random() * 1000) + 1}`;
+};
+
 const CasesShippedToCustomer = () => {
-  const { currentUser } = useAuth();
+  const [carriers, setCarriers] = useState([]);
+  const [selectedCarrierId, setSelectedCarrierId] = useState("0");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [barcodeValue, setBarcodeValue] = useState("");
+  const [caseIdInput, setCaseIdInput] = useState("");
 
-  // Mock data - replace with actual API calls
-  const [shippedCases, setShippedCases] = useState([
-    {
-      id: "CASE-001",
-      orderId: "ORD-12345",
-      customerName: "John Doe",
-      customerEmail: "john.doe@email.com",
-      product: "Wireless Headphones",
-      issue: "Not charging",
-      resolution: "Replaced charging port",
-      shippedDate: "2024-01-16",
-      trackingNumber: "TRK123456789",
-      carrier: "FedEx",
-      status: "In Transit",
-      estimatedDelivery: "2024-01-18",
-      customerNotified: true,
-    },
-    {
-      id: "CASE-002",
-      orderId: "ORD-12346",
-      customerName: "Jane Smith",
-      customerEmail: "jane.smith@email.com",
-      product: "Bluetooth Speaker",
-      issue: "Poor sound quality",
-      resolution: "Firmware update applied",
-      shippedDate: "2024-01-15",
-      trackingNumber: "TRK987654321",
-      carrier: "UPS",
-      status: "Delivered",
-      estimatedDelivery: "2024-01-17",
-      customerNotified: true,
-    },
-    {
-      id: "CASE-003",
-      orderId: "ORD-12347",
-      customerName: "Bob Johnson",
-      customerEmail: "bob.johnson@email.com",
-      product: "Smart Watch",
-      issue: "Screen cracked",
-      resolution: "Screen replaced",
-      shippedDate: "2024-01-14",
-      trackingNumber: "TRK456789123",
-      carrier: "USPS",
-      status: "Delivered",
-      estimatedDelivery: "2024-01-16",
-      customerNotified: false,
-    },
-  ]);
+  const [validCases, setValidCases] = useState([]);
+  const [invalidCases, setInvalidCases] = useState([]);
+  const [manifestHtml, setManifestHtml] = useState("");
 
-  const [selectedCase, setSelectedCase] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [loadingCarriers, setLoadingCarriers] = useState(false);
+  const [validatingCase, setValidatingCase] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case "in transit":
-        return "bg-blue-100 text-blue-800";
-      case "out for delivery":
-        return "bg-yellow-100 text-yellow-800";
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      case "delayed":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const todayDate = useMemo(() => new Date().toLocaleDateString(), []);
+
+  const selectedCarrier = useMemo(
+    () =>
+      carriers.find((carrier) => String(carrier.ID) === selectedCarrierId) ||
+      null,
+    [carriers, selectedCarrierId],
+  );
+
+  const selectedCarrierName = selectedCarrier?.Name || "";
+  const isCATN = String(selectedCarrier?.CATN || "").toUpperCase() === "Y";
+  const isFedExCarrier = selectedCarrierName.toLowerCase().includes("fedex");
+
+  useEffect(() => {
+    const fetchCarriers = async () => {
+      setLoadingCarriers(true);
+      try {
+        const response = await apiGet("/shipping/carriers");
+        setCarriers(response?.data?.carriers || []);
+      } catch (err) {
+        setError(err.message || "Failed to retrieve carrier names");
+      } finally {
+        setLoadingCarriers(false);
+      }
+    };
+
+    fetchCarriers();
+  }, []);
+
+  const handleCarrierChange = (event) => {
+    setSelectedCarrierId(event.target.value);
+    setError("");
+
+    if (
+      !event.target.selectedOptions[0]?.text?.toLowerCase().includes("fedex")
+    ) {
+      setBarcodeValue("");
     }
   };
 
-  const getCarrierIcon = (carrier) => {
-    const icons = {
-      FedEx: "🚚",
-      UPS: "📦",
-      USPS: "✉️",
-      DHL: "🚀",
-    };
-    return icons[carrier] || "📦";
+  const handleBarcodeKeyDown = (event) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    const parsedTracking = parseBarcodeToTracking(barcodeValue);
+    if (!parsedTracking) {
+      setError("Invalid barcode. Please rescan.");
+      setTrackingNumber("");
+      return;
+    }
+
+    setError("");
+    setTrackingNumber(parsedTracking);
   };
 
-  const filteredCases =
-    filterStatus === "all"
-      ? shippedCases
-      : shippedCases.filter(
-          (caseItem) =>
-            caseItem.status.toLowerCase() === filterStatus.toLowerCase()
-        );
+  const handleGenerateTracking = () => {
+    const numericCarrierId = parseInt(selectedCarrierId, 10);
+    if (!numericCarrierId || numericCarrierId < 1) {
+      setError("Please select a carrier");
+      return;
+    }
 
-  const handleNotifyCustomer = (caseId) => {
-    // Implement customer notification logic
-    setShippedCases((prevCases) =>
-      prevCases.map((caseItem) =>
-        caseItem.id === caseId
-          ? { ...caseItem, customerNotified: true }
-          : caseItem
-      )
+    setTrackingNumber(buildGeneratedTrackingNumber(numericCarrierId));
+    setError("");
+  };
+
+  const caseAlreadyListed = (caseId) => {
+    return (
+      validCases.includes(caseId) ||
+      invalidCases.some((item) => item.caseId === caseId)
     );
-    console.log(`Notification sent for case ${caseId}`);
   };
 
-  const handleViewTracking = (trackingNumber, carrier) => {
-    // Open tracking URL in new tab
-    const trackingUrls = {
-      FedEx: `https://www.fedex.com/en-us/tracking.html?tracknumbers=${trackingNumber}`,
-      UPS: `https://www.ups.com/track?tracknum=${trackingNumber}`,
-      USPS: `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`,
-      DHL: `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`,
-    };
+  const handleAddCase = async () => {
+    const caseId = caseIdInput.trim();
 
-    const url = trackingUrls[carrier];
-    if (url) {
-      window.open(url, "_blank");
+    if (!caseId) {
+      return;
+    }
+
+    if (!/^\d+$/.test(caseId)) {
+      setError("Case ID must contain numerals only");
+      return;
+    }
+
+    if (caseAlreadyListed(caseId)) {
+      setError("This case ID has already been added");
+      setCaseIdInput("");
+      return;
+    }
+
+    setValidatingCase(true);
+    setError("");
+
+    try {
+      const response = await apiPost("/shipping/validate-case", { caseId });
+      const result = response?.data || {};
+
+      if (result.valid) {
+        setValidCases((prev) => [...prev, caseId]);
+      } else {
+        const reason = !result.invoiceApprovedForPayment
+          ? "Invoice not approved for payment"
+          : "Open ticket exists";
+
+        setInvalidCases((prev) => [
+          ...prev,
+          {
+            caseId,
+            reason,
+            openTicketCount: result.checkOpenTicket || 0,
+          },
+        ]);
+      }
+
+      setCaseIdInput("");
+    } catch (err) {
+      setError(err.message || "Failed to retrieve open ticket count");
+      setCaseIdInput("");
+    } finally {
+      setValidatingCase(false);
+    }
+  };
+
+  const resetEntryFields = () => {
+    setCaseIdInput("");
+    setTrackingNumber("");
+    setBarcodeValue("");
+    setValidCases([]);
+    setInvalidCases([]);
+    setManifestHtml("");
+  };
+
+  const handleClearAll = () => {
+    resetEntryFields();
+    setSelectedCarrierId("0");
+    setError("");
+  };
+
+  const handleDeleteValidCase = (caseId) => {
+    setValidCases((prev) => prev.filter((id) => id !== caseId));
+  };
+
+  const handleDeleteInvalidCase = (caseId) => {
+    setInvalidCases((prev) => prev.filter((item) => item.caseId !== caseId));
+  };
+
+  const validateSubmissionInput = () => {
+    const numericCarrierId = parseInt(selectedCarrierId, 10);
+
+    if (!numericCarrierId || numericCarrierId < 1) {
+      return "Please select a carrier";
+    }
+
+    if (validCases.length === 0) {
+      return "Please enter at least one valid case ID";
+    }
+
+    if (!trackingNumber.trim()) {
+      return "Please enter a tracking number";
+    }
+
+    return "";
+  };
+
+  const submitShipment = async (generateManifest) => {
+    const validationError = validateSubmissionInput();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const response = await apiPost("/shipping/submit", {
+        carrierId: parseInt(selectedCarrierId, 10),
+        carrierName: selectedCarrierName,
+        trackingNumber: trackingNumber.trim(),
+        caseIds: validCases,
+        generateManifest,
+      });
+
+      const responseData = response?.data || {};
+
+      if (generateManifest && responseData.manifestHtml) {
+        setManifestHtml(responseData.manifestHtml);
+
+        const printWindow = window.open("about:blank", "_blank");
+        if (printWindow) {
+          printWindow.document.write(responseData.manifestHtml);
+          printWindow.document.close();
+        }
+      } else {
+        resetEntryFields();
+      }
+    } catch (err) {
+      setError(err.message || "Failed to ship cases");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCaseIdKeyDown = async (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      await handleAddCase();
     }
   };
 
   return (
-    <Layout showLogout={true} title="Transaction Manager">
+    <Layout showLogout={true} title="Cases Shipped to Customer">
       <div className="space-y-6">
-        {/* Header */}
         <div className="bg-white shadow-sm rounded-lg p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Cases Shipped to Customer
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Track shipped cases and manage delivery confirmations
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Total Shipped</p>
-              <p className="text-2xl font-bold text-green-600">
-                {shippedCases.length}
-              </p>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Cases Shipped to Customer
+          </h1>
+          <p className="text-gray-600">
+            Validate cases, assign shipping details, and ship in batch.
+          </p>
         </div>
 
-        {/* Filters and Actions */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <label className="text-sm font-medium text-gray-700">
-                Filter by Status:
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Statuses</option>
-                <option value="in transit">In Transit</option>
-                <option value="out for delivery">Out for Delivery</option>
-                <option value="delivered">Delivered</option>
-                <option value="delayed">Delayed</option>
-              </select>
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="secondary">Export Report</Button>
-              <Button variant="primary">Bulk Actions</Button>
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Date
+                </label>
+                <input
+                  type="text"
+                  value={todayDate}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Carrier
+                </label>
+                <select
+                  value={selectedCarrierId}
+                  onChange={handleCarrierChange}
+                  disabled={loadingCarriers || submitting}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {(carriers || []).map((carrier) => (
+                    <option key={carrier.ID} value={carrier.ID}>
+                      {carrier.Name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Barcode (FedEx only)
+                </label>
+                <input
+                  type="text"
+                  value={barcodeValue}
+                  onChange={(event) => setBarcodeValue(event.target.value)}
+                  onKeyDown={handleBarcodeKeyDown}
+                  disabled={!isFedExCarrier || submitting}
+                  placeholder="Scan barcode and press Enter"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Tracking Number
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={trackingNumber}
+                    onChange={(event) => setTrackingNumber(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                      }
+                    }}
+                    disabled={submitting}
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGenerateTracking}
+                    disabled={!isCATN || submitting}
+                    className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Case ID
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={caseIdInput}
+                    onChange={(event) =>
+                      setCaseIdInput(event.target.value.replace(/[^\d]/g, ""))
+                    }
+                    onKeyDown={handleCaseIdKeyDown}
+                    disabled={submitting || validatingCase}
+                    placeholder="Enter case ID"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCase}
+                    disabled={
+                      submitting || validatingCase || !caseIdInput.trim()
+                    }
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => submitShipment(true)}
+                  disabled={submitting}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Print Manifest
+                </button>
+                <button
+                  type="button"
+                  onClick={() => submitShipment(false)}
+                  disabled={submitting}
+                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Ship Another
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  disabled={submitting}
+                  className="sm:col-span-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:bg-gray-100"
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Shipped Cases Table */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Shipped Cases ({filteredCases.length})
-            </h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Case ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Carrier
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tracking
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ETA
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCases.map((caseItem) => (
-                  <tr key={caseItem.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {caseItem.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {caseItem.customerName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {caseItem.customerEmail}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {caseItem.product}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <span className="mr-2">
-                          {getCarrierIcon(caseItem.carrier)}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Valid Cases
+                    </h2>
+                    <span className="text-sm font-medium text-green-700">
+                      Count: {validCases.length}
+                    </span>
+                  </div>
+                  <div className="border border-gray-200 rounded-lg min-h-[180px] p-3 space-y-2">
+                    {validCases.length === 0 && (
+                      <p className="text-sm text-gray-500">
+                        No valid cases added yet.
+                      </p>
+                    )}
+                    {validCases.map((caseId) => (
+                      <div
+                        key={caseId}
+                        className="flex items-center justify-between px-3 py-2 rounded bg-green-50 border border-green-100"
+                      >
+                        <span className="text-sm font-medium text-green-900">
+                          {caseId}
                         </span>
-                        {caseItem.carrier}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <button
-                        onClick={() =>
-                          handleViewTracking(
-                            caseItem.trackingNumber,
-                            caseItem.carrier
-                          )
-                        }
-                        className="text-blue-600 hover:text-blue-900 underline"
-                      >
-                        {caseItem.trackingNumber}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                          caseItem.status
-                        )}`}
-                      >
-                        {caseItem.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {caseItem.estimatedDelivery}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {!caseItem.customerNotified && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => handleNotifyCustomer(caseItem.id)}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteValidCase(caseId)}
+                          className="text-xs px-2 py-1 rounded bg-white border border-green-200 hover:bg-green-100"
                         >
-                          Notify
-                        </Button>
-                      )}
-                      <Button size="sm" variant="primary">
-                        Details
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-        {/* Shipping Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V7M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
-                  />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">In Transit</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {shippedCases.filter((c) => c.status === "In Transit").length}
-                </p>
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Invalid Cases
+                    </h2>
+                    <span className="text-sm font-medium text-red-700">
+                      Count: {invalidCases.length}
+                    </span>
+                  </div>
+                  <div className="border border-gray-200 rounded-lg min-h-[180px] p-3 space-y-2">
+                    {invalidCases.length === 0 && (
+                      <p className="text-sm text-gray-500">
+                        No invalid cases added yet.
+                      </p>
+                    )}
+                    {invalidCases.map((item) => (
+                      <div
+                        key={item.caseId}
+                        className="px-3 py-2 rounded bg-red-50 border border-red-100"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-red-900">
+                            {item.caseId}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteInvalidCase(item.caseId)}
+                            className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-100"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <p className="text-xs text-red-700 mt-1">
+                          {item.reason}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                Manifest Preview
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                This updates when you click Print Manifest.
+              </p>
+              {manifestHtml ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden h-[360px]">
+                  <iframe
+                    title="Shipping Manifest"
+                    srcDoc={manifestHtml}
+                    className="w-full h-full"
                   />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Delivered</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {shippedCases.filter((c) => c.status === "Delivered").length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-yellow-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Pending Notification
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {shippedCases.filter((c) => !c.customerNotified).length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <svg
-                  className="w-6 h-6 text-purple-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                  />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Avg. Delivery Time
-                </p>
-                <p className="text-2xl font-bold text-gray-900">2.3 days</p>
-              </div>
+                </div>
+              ) : (
+                <div className="border border-dashed border-gray-300 rounded-lg p-8 text-sm text-gray-500">
+                  No manifest generated yet.
+                </div>
+              )}
             </div>
           </div>
         </div>
