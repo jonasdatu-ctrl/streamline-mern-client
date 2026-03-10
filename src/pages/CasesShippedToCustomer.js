@@ -155,8 +155,8 @@ const CasesShippedToCustomer = () => {
       if (seenInInput.has(caseId)) {
         nextInvalidCases.push({
           caseId,
-          reason: "Duplicate Case",
-          details: "Case entered more than once in the validate input",
+          reason: "Duplicate Input",
+          details: "Case entered more than once",
         });
         continue;
       }
