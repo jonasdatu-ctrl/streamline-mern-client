@@ -292,18 +292,6 @@ const CasesShippedToCustomer = () => {
             <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Date
-                </label>
-                <input
-                  type="text"
-                  value={todayDate}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Carrier
                 </label>
                 <select
@@ -417,6 +405,15 @@ const CasesShippedToCustomer = () => {
                 >
                   Clear All
                 </button>
+              </div>
+              {/* Stats */}
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">
+                  <span className="font-semibold text-gray-900">
+                    Today's Date:
+                  </span>{" "}
+                  {todayDate}
+                </p>
               </div>
             </div>
           </div>
