@@ -566,7 +566,7 @@ const CasesShippedToCustomer = () => {
                   </span>
                 </div>
               </div>
-              <div className="overflow-x-auto border-t border-gray-600">
+              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   {invalidCases.length > 0 && (
                     <thead className="bg-gray-50">
