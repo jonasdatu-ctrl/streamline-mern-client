@@ -260,7 +260,7 @@ const CasesShippedToCustomer = () => {
 
     if (validCases.length === 0) {
       return "Please enter at least one valid case ID";
-    }    
+    }
 
     if (!numericCarrierId || numericCarrierId < 1) {
       return "Please select a carrier";
@@ -379,7 +379,7 @@ const CasesShippedToCustomer = () => {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-green-50 border-b border-green-200 px-6 py-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Valid Cases
@@ -512,7 +512,7 @@ const CasesShippedToCustomer = () => {
               </div>
             </div>
 
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-red-50 border-b border-red-200 px-6 py-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Invalid Cases
