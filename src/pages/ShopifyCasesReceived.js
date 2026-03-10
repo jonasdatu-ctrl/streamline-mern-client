@@ -311,7 +311,7 @@ const ShopifyCasesReceived = () => {
     <Layout showLogout={true} title="Shopify Cases Received">
       <div className="space-y-6">
         {/* Header Section */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-600 p-6">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -327,7 +327,7 @@ const ShopifyCasesReceived = () => {
           {/* Input Section - Left Column */}
           <div className="lg:col-span-1 space-y-4">
             <div className="sticky top-0 space-y-4">
-              <div className="bg-white shadow-sm rounded-lg border border-gray-600 p-6 space-y-4 z-10">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6 space-y-4 z-10">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
                     Case ID Input
@@ -368,7 +368,7 @@ const ShopifyCasesReceived = () => {
                 )}
 
                 {/* Stats */}
-                <div className="rounded-lg border border-gray-600 p-3">
+                <div className="rounded-lg border border-gray-400 p-3">
                   <p className="text-xs text-gray-500 mb-1">
                     <span className="font-semibold text-gray-900">
                       Today's Date:
@@ -382,7 +382,7 @@ const ShopifyCasesReceived = () => {
                 </div>
               </div>
 
-              <div className="bg-white shadow-sm rounded-lg border border-gray-600 p-6">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   User Stats
                 </label>
@@ -408,7 +408,7 @@ const ShopifyCasesReceived = () => {
           {/* Results Section - Right Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Processing Cases */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Processing Cases
@@ -452,7 +452,7 @@ const ShopifyCasesReceived = () => {
             </div>
 
             {/* Existing Cases */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-purple-50 border-b border-purple-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Existing Cases
@@ -534,7 +534,7 @@ const ShopifyCasesReceived = () => {
             </div>
 
             {/* Invalid Cases */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-red-50 border-b border-red-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Invalid Cases
@@ -592,7 +592,7 @@ const ShopifyCasesReceived = () => {
             </div>
 
             {/* Processed Cases (Successfully) */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-green-50 border-b border-green-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Processed Cases

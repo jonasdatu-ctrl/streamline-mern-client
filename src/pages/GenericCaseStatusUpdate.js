@@ -350,7 +350,7 @@ const GenericCaseStatusUpdate = () => {
     <Layout showLogout={true} title="Generic Case Status Update">
       <div className="space-y-6">
         {/* Header Section */}
-        <div className="bg-white shadow-sm rounded-lg border border-gray-600 p-6">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -367,7 +367,7 @@ const GenericCaseStatusUpdate = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Input Section - Left Column */}
           <div className="lg:col-span-1">
-            <div className="sticky top-0 bg-white shadow-sm rounded-lg border border-gray-600 p-6 space-y-4 z-10">
+            <div className="sticky top-0 bg-white shadow-sm rounded-lg border border-gray-400 p-6 space-y-4 z-10">
               {/* Filter Status Input */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -559,7 +559,7 @@ const GenericCaseStatusUpdate = () => {
               )}
 
               {/* Stats */}
-              <div className="rounded-lg border border-gray-600 p-3">
+              <div className="rounded-lg border border-gray-400 p-3">
                 <p className="text-xs text-gray-500 mb-1">
                   <span className="font-semibold text-gray-900">
                     Today's Date:
@@ -577,7 +577,7 @@ const GenericCaseStatusUpdate = () => {
           {/* Results Section - Right Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Processing Cases */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Processing Cases
@@ -621,7 +621,7 @@ const GenericCaseStatusUpdate = () => {
             </div>
 
             {/* Cases Not Found */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-red-50 border-b border-red-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Cases Not Processed
@@ -671,7 +671,7 @@ const GenericCaseStatusUpdate = () => {
             </div>
 
             {/* Ready for Update (Successfully Found) */}
-            <div className="bg-white shadow-sm rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-green-50 border-b border-green-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Cases processed successfully
