@@ -258,12 +258,12 @@ const CasesShippedToCustomer = () => {
   const validateSubmissionInput = () => {
     const numericCarrierId = parseInt(selectedCarrierId, 10);
 
-    if (!numericCarrierId || numericCarrierId < 1) {
-      return "Please select a carrier";
-    }
-
     if (validCases.length === 0) {
       return "Please enter at least one valid case ID";
+    }    
+
+    if (!numericCarrierId || numericCarrierId < 1) {
+      return "Please select a carrier";
     }
 
     if (!trackingNumber.trim()) {
@@ -379,71 +379,6 @@ const CasesShippedToCustomer = () => {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white shadow-sm rounded-lg p-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Invalid Cases
-                </h2>
-                <span className="text-sm font-medium text-red-700">
-                  Count: {invalidCases.length}
-                </span>
-              </div>
-              <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Case ID
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Reason
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Details
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {invalidCases.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="px-4 py-6 text-sm text-gray-500 text-center"
-                        >
-                          No invalid cases.
-                        </td>
-                      </tr>
-                    )}
-                    {invalidCases.map((item, index) => (
-                      <tr key={`${item.caseId}-${index}`}>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-red-700">
-                          {item.reason}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.details || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteInvalidCase(item.caseId)}
-                            className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
             <div className="bg-white shadow-sm rounded-lg p-6">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -564,7 +499,7 @@ const CasesShippedToCustomer = () => {
                   disabled={submitting || validatingCases}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Print Manifest
+                  Ship and Print Manifest
                 </button>
                 <button
                   type="button"
@@ -572,8 +507,73 @@ const CasesShippedToCustomer = () => {
                   disabled={submitting || validatingCases}
                   className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Ship Another
+                  Ship Another with Same Carrier
                 </button>
+              </div>
+            </div>
+
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Invalid Cases
+                </h2>
+                <span className="text-sm font-medium text-red-700">
+                  Count: {invalidCases.length}
+                </span>
+              </div>
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Case ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reason
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Details
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {invalidCases.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-4 py-6 text-sm text-gray-500 text-center"
+                        >
+                          No invalid cases.
+                        </td>
+                      </tr>
+                    )}
+                    {invalidCases.map((item, index) => (
+                      <tr key={`${item.caseId}-${index}`}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {item.caseId}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-red-700">
+                          {item.reason}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.details || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteInvalidCase(item.caseId)}
+                            className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
