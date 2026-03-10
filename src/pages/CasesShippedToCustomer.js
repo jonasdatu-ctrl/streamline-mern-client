@@ -156,7 +156,7 @@ const CasesShippedToCustomer = () => {
         nextInvalidCases.push({
           caseId,
           reason: "Duplicate Input",
-          details: "Case entered more than once",
+          details: "",
         });
         continue;
       }
@@ -166,8 +166,8 @@ const CasesShippedToCustomer = () => {
       if (existingIds.has(caseId)) {
         nextInvalidCases.push({
           caseId,
-          reason: "Duplicate Case",
-          details: "Case has already been validated in this session",
+          reason: "Duplicate Input",
+          details: "",
         });
         continue;
       }
@@ -206,14 +206,22 @@ const CasesShippedToCustomer = () => {
         }
       } catch (err) {
         const message = String(err.message || "");
+        const normalizedMessage = message.toLowerCase();
         const isNotFound = message.toLowerCase().includes("not found");
+        const isPaymentDefault = normalizedMessage.includes("payment default");
 
         nextInvalidCases.push({
           caseId,
-          reason: isNotFound ? "Case Not Found" : "Validation Error",
-          details: isNotFound
-            ? "No matching case record was found"
-            : message || "Failed to validate case",
+          reason: isPaymentDefault
+            ? "Payment Default Carrier"
+            : isNotFound
+              ? "Case Not Found"
+              : "Validation Error",
+          details: isPaymentDefault
+            ? "Ship Carrier is set to Payment Default (59)"
+            : isNotFound
+              ? "No matching case record was found"
+              : message || "Failed to validate case",
         });
         existingIds.add(caseId);
       }
