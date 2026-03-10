@@ -41,19 +41,27 @@ const buildGeneratedTrackingNumber = (carrierId) => {
   return `${carrierId}-${now.getFullYear()}${now.getMonth() + 1}${now.getDate()}-${Math.floor(Math.random() * 1000) + 1}`;
 };
 
+const parseCaseIds = (input) => {
+  return String(input || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/[^\d]/g, ""))
+    .filter(Boolean);
+};
+
 const CasesShippedToCustomer = () => {
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrierId, setSelectedCarrierId] = useState("0");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [barcodeValue, setBarcodeValue] = useState("");
-  const [caseIdInput, setCaseIdInput] = useState("");
+  const [caseInput, setCaseInput] = useState("");
 
   const [validCases, setValidCases] = useState([]);
   const [invalidCases, setInvalidCases] = useState([]);
-  const [manifestHtml, setManifestHtml] = useState("");
 
   const [loadingCarriers, setLoadingCarriers] = useState(false);
-  const [validatingCase, setValidatingCase] = useState(false);
+  const [validatingCases, setValidatingCases] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -124,71 +132,105 @@ const CasesShippedToCustomer = () => {
     setError("");
   };
 
-  const caseAlreadyListed = (caseId) => {
-    return (
-      validCases.includes(caseId) ||
-      invalidCases.some((item) => item.caseId === caseId)
-    );
-  };
-
-  const handleAddCase = async () => {
-    const caseId = caseIdInput.trim();
-
-    if (!caseId) {
+  const handleValidateCases = async () => {
+    const inputCaseIds = parseCaseIds(caseInput);
+    if (inputCaseIds.length === 0) {
+      setError("Please enter at least one numeric case ID");
       return;
     }
 
-    if (!/^\d+$/.test(caseId)) {
-      setError("Case ID must contain numerals only");
-      return;
-    }
-
-    if (caseAlreadyListed(caseId)) {
-      setError("This case ID has already been added");
-      setCaseIdInput("");
-      return;
-    }
-
-    setValidatingCase(true);
+    setValidatingCases(true);
     setError("");
 
-    try {
-      const response = await apiPost("/shipping/validate-case", { caseId });
-      const result = response?.data || {};
+    const existingIds = new Set([
+      ...validCases,
+      ...invalidCases.map((item) => item.caseId),
+    ]);
 
-      if (result.valid) {
-        setValidCases((prev) => [...prev, caseId]);
-      } else {
-        const reason = !result.invoiceApprovedForPayment
-          ? "Invoice not approved for payment"
-          : "Open ticket exists";
+    const nextValidCases = [...validCases];
+    const nextInvalidCases = [...invalidCases];
+    const seenInInput = new Set();
 
-        setInvalidCases((prev) => [
-          ...prev,
-          {
-            caseId,
-            reason,
-            openTicketCount: result.checkOpenTicket || 0,
-          },
-        ]);
+    for (const caseId of inputCaseIds) {
+      if (seenInInput.has(caseId)) {
+        nextInvalidCases.push({
+          caseId,
+          reason: "Duplicate Case",
+          details: "Case entered more than once in the validate input",
+        });
+        continue;
       }
 
-      setCaseIdInput("");
-    } catch (err) {
-      setError(err.message || "Failed to retrieve open ticket count");
-      setCaseIdInput("");
-    } finally {
-      setValidatingCase(false);
+      seenInInput.add(caseId);
+
+      if (existingIds.has(caseId)) {
+        nextInvalidCases.push({
+          caseId,
+          reason: "Duplicate Case",
+          details: "Case has already been validated in this session",
+        });
+        continue;
+      }
+
+      try {
+        const response = await apiPost("/shipping/validate-case", { caseId });
+        const result = response?.data || {};
+
+        if (result.valid) {
+          nextValidCases.push(caseId);
+          existingIds.add(caseId);
+        } else {
+          const openCount = parseInt(result.checkOpenTicket, 10) || 0;
+
+          if (!result.invoiceApprovedForPayment) {
+            nextInvalidCases.push({
+              caseId,
+              reason: "Invoice Not Approved",
+              details: "Invoice approval for payment is required",
+            });
+          } else if (openCount > 0) {
+            nextInvalidCases.push({
+              caseId,
+              reason: "Open Ticket",
+              details: `Open ticket count: ${openCount}`,
+            });
+          } else {
+            nextInvalidCases.push({
+              caseId,
+              reason: "Validation Failed",
+              details: "Case failed shipping validation",
+            });
+          }
+
+          existingIds.add(caseId);
+        }
+      } catch (err) {
+        const message = String(err.message || "");
+        const isNotFound = message.toLowerCase().includes("not found");
+
+        nextInvalidCases.push({
+          caseId,
+          reason: isNotFound ? "Case Not Found" : "Validation Error",
+          details: isNotFound
+            ? "No matching case record was found"
+            : message || "Failed to validate case",
+        });
+        existingIds.add(caseId);
+      }
     }
+
+    setValidCases(nextValidCases);
+    setInvalidCases(nextInvalidCases);
+    setCaseInput("");
+    setValidatingCases(false);
   };
 
   const resetEntryFields = () => {
-    setCaseIdInput("");
+    setCaseInput("");
     setTrackingNumber("");
     setBarcodeValue("");
     setValidCases([]);
     setInvalidCases([]);
-    setManifestHtml("");
   };
 
   const handleClearAll = () => {
@@ -245,27 +287,18 @@ const CasesShippedToCustomer = () => {
       const responseData = response?.data || {};
 
       if (generateManifest && responseData.manifestHtml) {
-        setManifestHtml(responseData.manifestHtml);
-
         const printWindow = window.open("about:blank", "_blank");
         if (printWindow) {
           printWindow.document.write(responseData.manifestHtml);
           printWindow.document.close();
         }
-      } else {
-        resetEntryFields();
       }
+
+      resetEntryFields();
     } catch (err) {
       setError(err.message || "Failed to ship cases");
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleCaseIdKeyDown = async (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      await handleAddCase();
     }
   };
 
@@ -292,120 +325,39 @@ const CasesShippedToCustomer = () => {
             <div className="sticky top-0 bg-white shadow-sm rounded-lg p-6 space-y-4 z-10">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Carrier
+                  Case ID Input
                 </label>
-                <select
-                  value={selectedCarrierId}
-                  onChange={handleCarrierChange}
-                  disabled={loadingCarriers || submitting}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {(carriers || []).map((carrier) => (
-                    <option key={carrier.ID} value={carrier.ID}>
-                      {carrier.Name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Barcode (FedEx only)
-                </label>
-                <input
-                  type="text"
-                  value={barcodeValue}
-                  onChange={(event) => setBarcodeValue(event.target.value)}
-                  onKeyDown={handleBarcodeKeyDown}
-                  disabled={!isFedExCarrier || submitting}
-                  placeholder="Scan barcode and press Enter"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                <p className="text-xs text-gray-500 mb-3">
+                  Enter multiple case IDs, one per line.
+                </p>
+                <textarea
+                  value={caseInput}
+                  onChange={(event) => setCaseInput(event.target.value)}
+                  placeholder="123456&#10;123457&#10;123458"
+                  disabled={validatingCases || submitting}
+                  className="w-full h-56 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Tracking Number
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={trackingNumber}
-                    onChange={(event) => setTrackingNumber(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                      }
-                    }}
-                    disabled={submitting}
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleGenerateTracking}
-                    disabled={!isCATN || submitting}
-                    className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-                  >
-                    Generate
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Case ID
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={caseIdInput}
-                    onChange={(event) =>
-                      setCaseIdInput(event.target.value.replace(/[^\d]/g, ""))
-                    }
-                    onKeyDown={handleCaseIdKeyDown}
-                    disabled={submitting || validatingCase}
-                    placeholder="Enter case ID"
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCase}
-                    disabled={
-                      submitting || validatingCase || !caseIdInput.trim()
-                    }
-                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-                  >
-                    Add
-                  </button>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => submitShipment(true)}
-                  disabled={submitting}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  onClick={handleValidateCases}
+                  disabled={submitting || validatingCases}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  Print Manifest
-                </button>
-                <button
-                  type="button"
-                  onClick={() => submitShipment(false)}
-                  disabled={submitting}
-                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  Ship Another
+                  {validatingCases ? "Validating..." : "Validate"}
                 </button>
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  disabled={submitting}
-                  className="sm:col-span-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:bg-gray-100"
+                  disabled={submitting || validatingCases}
+                  className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:bg-gray-100"
                 >
-                  Clear All
+                  Clear
                 </button>
               </div>
+
               {/* Stats */}
               <div className="pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500 mb-1">
@@ -420,104 +372,201 @@ const CasesShippedToCustomer = () => {
 
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white shadow-sm rounded-lg p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Valid Cases
-                    </h2>
-                    <span className="text-sm font-medium text-green-700">
-                      Count: {validCases.length}
-                    </span>
-                  </div>
-                  <div className="border border-gray-200 rounded-lg min-h-[180px] p-3 space-y-2">
-                    {validCases.length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        No valid cases added yet.
-                      </p>
-                    )}
-                    {validCases.map((caseId) => (
-                      <div
-                        key={caseId}
-                        className="flex items-center justify-between px-3 py-2 rounded bg-green-50 border border-green-100"
-                      >
-                        <span className="text-sm font-medium text-green-900">
-                          {caseId}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteValidCase(caseId)}
-                          className="text-xs px-2 py-1 rounded bg-white border border-green-200 hover:bg-green-100"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Invalid Cases
-                    </h2>
-                    <span className="text-sm font-medium text-red-700">
-                      Count: {invalidCases.length}
-                    </span>
-                  </div>
-                  <div className="border border-gray-200 rounded-lg min-h-[180px] p-3 space-y-2">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Invalid Cases
+                </h2>
+                <span className="text-sm font-medium text-red-700">
+                  Count: {invalidCases.length}
+                </span>
+              </div>
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Case ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reason
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Details
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {invalidCases.length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        No invalid cases added yet.
-                      </p>
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-4 py-6 text-sm text-gray-500 text-center"
+                        >
+                          No invalid cases.
+                        </td>
+                      </tr>
                     )}
-                    {invalidCases.map((item) => (
-                      <div
-                        key={item.caseId}
-                        className="px-3 py-2 rounded bg-red-50 border border-red-100"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-red-900">
-                            {item.caseId}
-                          </span>
+                    {invalidCases.map((item, index) => (
+                      <tr key={`${item.caseId}-${index}`}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {item.caseId}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-red-700">
+                          {item.reason}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.details || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-right">
                           <button
                             type="button"
                             onClick={() => handleDeleteInvalidCase(item.caseId)}
-                            className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-100"
+                            className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
                           >
                             Remove
                           </button>
-                        </div>
-                        <p className="text-xs text-red-700 mt-1">
-                          {item.reason}
-                        </p>
-                      </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
 
             <div className="bg-white shadow-sm rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                Manifest Preview
-              </h2>
-              <p className="text-sm text-gray-500 mb-4">
-                This updates when you click Print Manifest.
-              </p>
-              {manifestHtml ? (
-                <div className="border border-gray-200 rounded-lg overflow-hidden h-[360px]">
-                  <iframe
-                    title="Shipping Manifest"
-                    srcDoc={manifestHtml}
-                    className="w-full h-full"
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Valid Cases
+                </h2>
+                <span className="text-sm font-medium text-green-700">
+                  Count: {validCases.length}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto border border-gray-200 rounded-lg mb-6">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Case ID
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {validCases.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="px-4 py-6 text-sm text-gray-500 text-center"
+                        >
+                          No valid cases yet.
+                        </td>
+                      </tr>
+                    )}
+                    {validCases.map((caseId) => (
+                      <tr key={caseId}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {caseId}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteValidCase(caseId)}
+                            className="text-xs px-2 py-1 rounded bg-white border border-green-200 hover:bg-green-50"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Carrier ID
+                  </label>
+                  <select
+                    value={selectedCarrierId}
+                    onChange={handleCarrierChange}
+                    disabled={loadingCarriers || submitting}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {(carriers || []).map((carrier) => (
+                      <option key={carrier.ID} value={carrier.ID}>
+                        {carrier.Name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Barcode
+                  </label>
+                  <input
+                    type="text"
+                    value={barcodeValue}
+                    onChange={(event) => setBarcodeValue(event.target.value)}
+                    onKeyDown={handleBarcodeKeyDown}
+                    disabled={!isFedExCarrier || submitting}
+                    placeholder="FedEx scan and press Enter"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                   />
                 </div>
-              ) : (
-                <div className="border border-dashed border-gray-300 rounded-lg p-8 text-sm text-gray-500">
-                  No manifest generated yet.
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Tracking Number
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={trackingNumber}
+                      onChange={(event) =>
+                        setTrackingNumber(event.target.value)
+                      }
+                      disabled={submitting}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateTracking}
+                      disabled={!isCATN || submitting}
+                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                    >
+                      Generate
+                    </button>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => submitShipment(true)}
+                  disabled={submitting || validatingCases}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Print Manifest
+                </button>
+                <button
+                  type="button"
+                  onClick={() => submitShipment(false)}
+                  disabled={submitting || validatingCases}
+                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Ship Another
+                </button>
+              </div>
             </div>
           </div>
         </div>
