@@ -51,6 +51,19 @@ const parseCaseIds = (input) => {
     .filter(Boolean);
 };
 
+const formatDisplayDate = (value) => {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleDateString();
+};
+
 const CasesShippedToCustomer = () => {
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrierId, setSelectedCarrierId] = useState("0");
@@ -180,7 +193,7 @@ const CasesShippedToCustomer = () => {
     setError("");
 
     const existingIds = new Set([
-      ...validCases,
+      ...validCases.map((item) => item.caseId),
       ...invalidCases.map((item) => item.caseId),
     ]);
 
@@ -214,7 +227,14 @@ const CasesShippedToCustomer = () => {
         const result = response?.data || {};
 
         if (result.valid) {
-          nextValidCases.push(caseId);
+          nextValidCases.push({
+            caseId,
+            customerName: result.customerName || "-",
+            caseStatus: result.caseStatus || "-",
+            receivedDate: result.receivedDate || null,
+            lastStatusUpdate: result.lastStatusUpdate || null,
+            isRush: Boolean(result.isRush),
+          });
           existingIds.add(caseId);
         } else {
           const openCount = parseInt(result.checkOpenTicket, 10) || 0;
@@ -285,7 +305,7 @@ const CasesShippedToCustomer = () => {
   };
 
   const handleDeleteValidCase = (caseId) => {
-    setValidCases((prev) => prev.filter((id) => id !== caseId));
+    setValidCases((prev) => prev.filter((item) => item.caseId !== caseId));
   };
 
   const handleDeleteInvalidCase = (caseId) => {
@@ -321,11 +341,13 @@ const CasesShippedToCustomer = () => {
     setError("");
 
     try {
+      const validCaseIds = validCases.map((item) => item.caseId);
+
       const response = await apiPost("/shipping/submit", {
         carrierId: parseInt(selectedCarrierId, 10),
         carrierName: selectedCarrierName,
         trackingNumber: trackingNumber.trim(),
-        caseIds: validCases,
+        caseIds: validCaseIds,
         generateManifest,
       });
 
@@ -436,6 +458,21 @@ const CasesShippedToCustomer = () => {
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Case ID
                         </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Customer Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Case Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Received Date
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Status Update
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Rush
+                        </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Action
                         </th>
@@ -446,22 +483,37 @@ const CasesShippedToCustomer = () => {
                     {validCases.length === 0 && (
                       <tr>
                         <td
-                          colSpan={2}
+                          colSpan={7}
                           className="px-4 py-6 text-sm text-gray-500 text-center"
                         >
                           No valid cases yet.
                         </td>
                       </tr>
                     )}
-                    {validCases.map((caseId) => (
-                      <tr key={caseId}>
+                    {validCases.map((item) => (
+                      <tr key={item.caseId}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {caseId}
+                          {item.caseId}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.customerName || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.caseStatus || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                          {formatDisplayDate(item.receivedDate)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                          {formatDisplayDate(item.lastStatusUpdate)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.isRush ? "Yes" : "No"}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
-                            onClick={() => handleDeleteValidCase(caseId)}
+                            onClick={() => handleDeleteValidCase(item.caseId)}
                             className="text-xs px-2 py-1 rounded bg-white border border-green-200 hover:bg-green-50"
                           >
                             Remove
