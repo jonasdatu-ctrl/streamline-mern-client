@@ -509,11 +509,11 @@ const CasesShippedToCustomer = () => {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.isRush ? (
-                            <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                               Yes
                             </span>
                           ) : (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                               No
                             </span>
                           )}
