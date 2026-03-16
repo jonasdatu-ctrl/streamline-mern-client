@@ -7,7 +7,7 @@
  * - Barcode parsing (FedEx)
  * - Generate CATN tracking when available
  * - Validate case IDs against approval/open-ticket rules
- * - Ship cases with optional manifest print
+ * - Ship cases in batch
  */
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -330,7 +330,7 @@ const CasesShippedToCustomer = () => {
     return "";
   };
 
-  const submitShipment = async (generateManifest) => {
+  const submitShipment = async () => {
     const validationError = validateSubmissionInput();
     if (validationError) {
       setError(validationError);
@@ -343,23 +343,12 @@ const CasesShippedToCustomer = () => {
     try {
       const validCaseIds = validCases.map((item) => item.caseId);
 
-      const response = await apiPost("/shipping/submit", {
+      await apiPost("/shipping/submit", {
         carrierId: parseInt(selectedCarrierId, 10),
         carrierName: selectedCarrierName,
         trackingNumber: trackingNumber.trim(),
         caseIds: validCaseIds,
-        generateManifest,
       });
-
-      const responseData = response?.data || {};
-
-      if (generateManifest && responseData.manifestHtml) {
-        const printWindow = window.open("about:blank", "_blank");
-        if (printWindow) {
-          printWindow.document.write(responseData.manifestHtml);
-          printWindow.document.close();
-        }
-      }
 
       resetEntryFields();
     } catch (err) {
@@ -594,18 +583,10 @@ const CasesShippedToCustomer = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     type="button"
-                    onClick={() => submitShipment(true)}
-                    disabled={submitting || validatingCases}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    Ship and Print Manifest
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => submitShipment(false)}
+                    onClick={submitShipment}
                     disabled={submitting || validatingCases}
                     className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
