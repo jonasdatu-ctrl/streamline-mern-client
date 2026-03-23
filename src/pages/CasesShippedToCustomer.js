@@ -249,8 +249,20 @@ const CasesShippedToCustomer = () => {
           existingIds.add(caseId);
         } else {
           const openCount = parseInt(result.checkOpenTicket, 10) || 0;
+          const isPaymentDefault =
+            String(result.reasonCode || "").toUpperCase() ===
+            "PAYMENT_DEFAULT_CARRIER";
 
-          if (!result.invoiceApprovedForPayment) {
+          if (isPaymentDefault) {
+            nextInvalidCases.push({
+              caseId,
+              caseStatus: result.caseStatus || "-",
+              reason: "Payment Default Carrier",
+              details:
+                result.message ||
+                "Ship Carrier is set to Payment Default (59)",
+            });
+          } else if (!result.invoiceApprovedForPayment) {
             nextInvalidCases.push({
               caseId,
               caseStatus: result.caseStatus || "-",
