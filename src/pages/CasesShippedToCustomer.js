@@ -280,10 +280,11 @@ const CasesShippedToCustomer = () => {
         const normalizedMessage = message.toLowerCase();
         const isNotFound = message.toLowerCase().includes("not found");
         const isPaymentDefault = normalizedMessage.includes("payment default");
+        const errorCaseStatus = err?.data?.caseStatus || "-";
 
         nextInvalidCases.push({
           caseId,
-          caseStatus: result.caseStatus || "-",
+          caseStatus: errorCaseStatus,
           reason: isPaymentDefault
             ? "Payment Default Carrier"
             : isNotFound
