@@ -343,7 +343,7 @@ const CasesShippedToCustomer = () => {
     try {
       const validCaseIds = validCases.map((item) => item.caseId);
 
-      await apiPost("/shipping/submit", {
+      await apiPost("/shipping/shipped-to-customer", {
         carrierId: parseInt(selectedCarrierId, 10),
         carrierName: selectedCarrierName,
         trackingNumber: trackingNumber.trim(),
