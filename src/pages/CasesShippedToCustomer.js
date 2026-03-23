@@ -283,7 +283,7 @@ const CasesShippedToCustomer = () => {
 
         nextInvalidCases.push({
           caseId,
-          caseStatus: "-",
+          caseStatus: result.caseStatus || "-",
           reason: isPaymentDefault
             ? "Payment Default Carrier"
             : isNotFound
