@@ -214,6 +214,7 @@ const CasesShippedToCustomer = () => {
       if (seenInInput.has(caseId)) {
         nextInvalidCases.push({
           caseId,
+          caseStatus: "-",
           reason: "Duplicate Input",
           details: "",
         });
@@ -225,6 +226,7 @@ const CasesShippedToCustomer = () => {
       if (existingIds.has(caseId)) {
         nextInvalidCases.push({
           caseId,
+          caseStatus: "-",
           reason: "Duplicate Input",
           details: "",
         });
@@ -251,18 +253,21 @@ const CasesShippedToCustomer = () => {
           if (!result.invoiceApprovedForPayment) {
             nextInvalidCases.push({
               caseId,
+              caseStatus: result.caseStatus || "-",
               reason: "Invoice Not Approved",
               details: "Invoice approval for payment is required",
             });
           } else if (openCount > 0) {
             nextInvalidCases.push({
               caseId,
+              caseStatus: result.caseStatus || "-",
               reason: "Open Ticket",
               details: `Open ticket count: ${openCount}`,
             });
           } else {
             nextInvalidCases.push({
               caseId,
+              caseStatus: result.caseStatus || "-",
               reason: "Validation Failed",
               details: "Case failed shipping validation",
             });
@@ -278,6 +283,7 @@ const CasesShippedToCustomer = () => {
 
         nextInvalidCases.push({
           caseId,
+          caseStatus: "-",
           reason: isPaymentDefault
             ? "Payment Default Carrier"
             : isNotFound
@@ -844,6 +850,9 @@ const CasesShippedToCustomer = () => {
                           Case ID
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Case Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Reason
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -870,6 +879,9 @@ const CasesShippedToCustomer = () => {
                       <tr key={`${item.caseId}-${index}`}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
                           {item.caseId}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.caseStatus || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-red-700">
                           {item.reason}
