@@ -64,6 +64,14 @@ const formatDisplayDate = (value) => {
   return date.toLocaleDateString();
 };
 
+const escapeHtml = (value) =>
+  String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const CasesShippedToCustomer = () => {
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrierId, setSelectedCarrierId] = useState("0");
@@ -73,6 +81,7 @@ const CasesShippedToCustomer = () => {
 
   const [validCases, setValidCases] = useState([]);
   const [invalidCases, setInvalidCases] = useState([]);
+  const [shippedCases, setShippedCases] = useState([]);
 
   const [loadingCarriers, setLoadingCarriers] = useState(false);
   const [validatingCases, setValidatingCases] = useState(false);
@@ -312,6 +321,87 @@ const CasesShippedToCustomer = () => {
     setInvalidCases((prev) => prev.filter((item) => item.caseId !== caseId));
   };
 
+  const handleDeleteShippedCase = (caseId) => {
+    setShippedCases((prev) => prev.filter((item) => item.caseId !== caseId));
+  };
+
+  const handlePrintManifest = () => {
+    if (shippedCases.length === 0) {
+      setError("No shipped cases available to print");
+      return;
+    }
+
+    const manifestDate = new Date().toLocaleString();
+    const manifestRows = shippedCases
+      .map(
+        (item, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(item.caseId)}</td>
+            <td>${escapeHtml(item.customerName || "-")}</td>
+            <td>${escapeHtml(item.caseStatus || "-")}</td>
+            <td>${escapeHtml(item.carrierName || "-")}</td>
+            <td>${escapeHtml(item.trackingNumber || "-")}</td>
+            <td>${escapeHtml(formatDisplayDate(item.shippedDate))}</td>
+          </tr>
+        `,
+      )
+      .join("");
+
+    const printWindow = window.open("", "_blank", "width=1024,height=768");
+    if (!printWindow) {
+      setError(
+        "Unable to open print window. Please allow popups and try again",
+      );
+      return;
+    }
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Shipping Manifest</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
+            h1 { margin: 0 0 8px; font-size: 24px; }
+            .meta { margin-bottom: 16px; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; font-size: 13px; }
+            th { background: #f3f4f6; }
+            .sign { margin-top: 24px; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <h1>Shipping Manifest</h1>
+          <div class="meta">
+            <div><strong>Date:</strong> ${escapeHtml(manifestDate)}</div>
+            <div><strong>Total Cases:</strong> ${shippedCases.length}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Case ID</th>
+                <th>Customer Name</th>
+                <th>Case Status</th>
+                <th>Carrier</th>
+                <th>Tracking Number</th>
+                <th>Shipped Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${manifestRows}
+            </tbody>
+          </table>
+          <div class="sign">Sign Here: ______________________</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
   const validateSubmissionInput = () => {
     const numericCarrierId = parseInt(selectedCarrierId, 10);
 
@@ -343,11 +433,50 @@ const CasesShippedToCustomer = () => {
     try {
       const validCaseIds = validCases.map((item) => item.caseId);
 
-      await apiPost("/shipping/shipped-to-customer", {
+      const response = await apiPost("/shipping/shipped-to-customer", {
         carrierId: parseInt(selectedCarrierId, 10),
         carrierName: selectedCarrierName,
         trackingNumber: trackingNumber.trim(),
         caseIds: validCaseIds,
+      });
+
+      const processedCases = Array.isArray(response?.data?.processedCases)
+        ? response.data.processedCases
+        : validCaseIds.map((caseId) => ({
+            caseId,
+            customerName:
+              validCases.find((item) => item.caseId === caseId)?.customerName ||
+              "-",
+            caseStatus: "Shipped to Customer",
+            shippedDate: new Date().toISOString(),
+            trackingNumber: trackingNumber.trim(),
+            carrierName: selectedCarrierName,
+          }));
+
+      setShippedCases((prev) => {
+        const existingCaseIds = new Set(
+          prev.map((item) => String(item.caseId)),
+        );
+        const merged = [...prev];
+
+        for (const item of processedCases) {
+          const normalizedCaseId = String(item.caseId || "").trim();
+          if (!normalizedCaseId || existingCaseIds.has(normalizedCaseId)) {
+            continue;
+          }
+
+          merged.push({
+            caseId: normalizedCaseId,
+            customerName: item.customerName || "-",
+            caseStatus: item.caseStatus || "Shipped to Customer",
+            shippedDate: item.shippedDate || new Date().toISOString(),
+            trackingNumber: item.trackingNumber || trackingNumber.trim(),
+            carrierName: item.carrierName || selectedCarrierName,
+          });
+          existingCaseIds.add(normalizedCaseId);
+        }
+
+        return merged;
       });
 
       resetEntryFields();
@@ -593,6 +722,105 @@ const CasesShippedToCustomer = () => {
                     Ship Another with Same Carrier
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
+              <div className="bg-sky-50 border-b border-sky-200 px-6 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Shipped Cases
+                  </h2>
+                  <span className="text-sm font-medium text-sky-700">
+                    Count: {shippedCases.length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border-b border-gray-400">
+                <table className="min-w-full divide-y divide-gray-200">
+                  {shippedCases.length > 0 && (
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Case ID
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Customer Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Case Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Carrier
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tracking Number
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Shipped Date
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                  )}
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {shippedCases.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-4 py-6 text-sm text-gray-500 text-center"
+                        >
+                          No shipped cases yet.
+                        </td>
+                      </tr>
+                    )}
+                    {shippedCases.map((item) => (
+                      <tr key={item.caseId}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          {item.caseId}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.customerName || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.caseStatus || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.carrierName || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.trackingNumber || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                          {formatDisplayDate(item.shippedDate)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteShippedCase(item.caseId)}
+                            className="text-xs px-2 py-1 rounded bg-white border border-sky-200 hover:bg-sky-50"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-6 border-t border-gray-400">
+                <button
+                  type="button"
+                  onClick={handlePrintManifest}
+                  disabled={shippedCases.length === 0}
+                  className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Print Manifest
+                </button>
               </div>
             </div>
 
