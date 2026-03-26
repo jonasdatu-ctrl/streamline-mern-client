@@ -380,26 +380,25 @@ const ShopifyCasesReceived = () => {
                     <p>Processed: {totalProcessed}</p>
                   </div>
                 </div>
-              </div>
+                <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-3">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    User Stats
+                  </label>
 
-              <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
-                  User Stats
-                </label>
-
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      Logged-in user:
-                    </span>{" "}
-                    {statsUserName}
-                  </p>
-                  <p className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      Cases received by user today:
-                    </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseReceivedToday}
-                  </p>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p className="text-xs text-gray-500 mb-1">
+                      <span className="font-semibold text-gray-900">
+                        Logged-in user:
+                      </span>{" "}
+                      {statsUserName}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      <span className="font-semibold text-gray-900">
+                        Cases received by user today:
+                      </span>{" "}
+                      {statsLoading ? "Loading..." : totalCaseReceivedToday}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

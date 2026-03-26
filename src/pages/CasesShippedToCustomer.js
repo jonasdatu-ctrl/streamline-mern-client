@@ -650,7 +650,7 @@ const CasesShippedToCustomer = () => {
                 </p>
               </div>
 
-              <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-400">
+              <div className="bg-white shadow-sm rounded-lg p-3 border border-gray-400">
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   User Stats
                 </label>
