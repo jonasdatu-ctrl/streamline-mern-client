@@ -87,6 +87,8 @@ const CasesShippedToCustomer = () => {
   const [validatingCases, setValidatingCases] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [trackingWarning, setTrackingWarning] = useState("");
+  const [checkingTrackingNumber, setCheckingTrackingNumber] = useState(false);
 
   const todayDate = useMemo(() => new Date().toLocaleDateString(), []);
 
@@ -188,8 +190,47 @@ const CasesShippedToCustomer = () => {
     }
 
     setTrackingNumber(buildGeneratedTrackingNumber(numericCarrierId));
+    setTrackingWarning("");
     setError("");
   };
+
+  useEffect(() => {
+    const normalizedTracking = trackingNumber.trim();
+
+    if (!normalizedTracking) {
+      setTrackingWarning("");
+      setCheckingTrackingNumber(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setCheckingTrackingNumber(true);
+
+      try {
+        const response = await apiPost("/shipping/check-tracking-number", {
+          trackingNumber: normalizedTracking,
+        });
+
+        const duplicateCaseIds = Array.isArray(response?.data?.caseIds)
+          ? response.data.caseIds
+          : [];
+
+        if (duplicateCaseIds.length > 0) {
+          setTrackingWarning(
+            `Tracking Number ${normalizedTracking} is already used for Cases ${duplicateCaseIds.join(", ")}`,
+          );
+        } else {
+          setTrackingWarning("");
+        }
+      } catch {
+        setTrackingWarning("");
+      } finally {
+        setCheckingTrackingNumber(false);
+      }
+    }, 700);
+
+    return () => clearTimeout(timeoutId);
+  }, [trackingNumber]);
 
   const handleValidateCases = async () => {
     const inputCaseIds = parseCaseIds(caseInput);
@@ -321,6 +362,7 @@ const CasesShippedToCustomer = () => {
   const resetEntryFields = () => {
     setCaseInput("");
     setTrackingNumber("");
+    setTrackingWarning("");
     setBarcodeValue("");
     setValidCases([]);
     setInvalidCases([]);
@@ -730,6 +772,18 @@ const CasesShippedToCustomer = () => {
                     </div>
                   </div>
                 </div>
+
+                {trackingWarning && (
+                  <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {trackingWarning}
+                  </div>
+                )}
+
+                {checkingTrackingNumber && trackingNumber.trim() && (
+                  <div className="mb-4 text-xs text-gray-500">
+                    Checking tracking number...
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-3">
                   <button
