@@ -10,7 +10,8 @@
  * - Ship cases in batch
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -73,6 +74,7 @@ const escapeHtml = (value) =>
     .replace(/'/g, "&#39;");
 
 const CasesShippedToCustomer = () => {
+  const { currentUser } = useAuth();
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrierId, setSelectedCarrierId] = useState("0");
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -90,6 +92,11 @@ const CasesShippedToCustomer = () => {
   const [trackingWarning, setTrackingWarning] = useState("");
   const [checkingTrackingNumber, setCheckingTrackingNumber] = useState(false);
 
+  const [statsUserName, setStatsUserName] = useState("");
+  const [totalCaseShippedToday, setTotalCaseShippedToday] = useState(0);
+  const [totalCaseShippedThisWeek, setTotalCaseShippedThisWeek] = useState(0);
+  const [statsLoading, setStatsLoading] = useState(true);
+
   const todayDate = useMemo(() => new Date().toLocaleDateString(), []);
 
   const selectedCarrier = useMemo(
@@ -102,6 +109,25 @@ const CasesShippedToCustomer = () => {
   const selectedCarrierName = selectedCarrier?.Name || "";
   const isCATN = String(selectedCarrier?.CATN || "").toUpperCase() === "Y";
   const isFedExCarrier = selectedCarrierName.toLowerCase().includes("fedex");
+
+  const fetchUserStats = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const response = await apiGet("/shipping/user-stats/today");
+
+      if (response.status === "success") {
+        setTotalCaseShippedToday(response.data?.totalCaseShippedToday || 0);
+        setTotalCaseShippedThisWeek(response.data?.totalCaseShippedThisWeek || 0);
+        if (response.data?.userName) {
+          setStatsUserName(response.data.userName);
+        }
+      }
+    } catch (statsError) {
+      console.error("Error fetching user stats:", statsError);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchCarriers = async () => {
@@ -118,6 +144,16 @@ const CasesShippedToCustomer = () => {
 
     fetchCarriers();
   }, []);
+
+  useEffect(() => {
+    setStatsUserName(
+      currentUser?.UserName ||
+        currentUser?.displayName ||
+        currentUser?.email ||
+        "N/A",
+    );
+    fetchUserStats();
+  }, [currentUser, fetchUserStats]);
 
   const handleCarrierChange = (event) => {
     setSelectedCarrierId(event.target.value);
@@ -612,6 +648,33 @@ const CasesShippedToCustomer = () => {
                   </span>{" "}
                   {todayDate}
                 </p>
+              </div>
+
+              <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-400">
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  User Stats
+                </label>
+
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Logged-in user:
+                    </span>{" "}
+                    {statsUserName}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Cases shipped by user today:
+                    </span>{" "}
+                    {statsLoading ? "Loading..." : totalCaseShippedToday}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Cases shipped by user this week:
+                    </span>{" "}
+                    {statsLoading ? "Loading..." : totalCaseShippedThisWeek}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
