@@ -886,7 +886,7 @@ const CasesShippedToCustomer = () => {
                     disabled={submitting || validatingCases}
                     className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    Ship Another with Same Carrier
+                    Ship Cases to Customer
                   </button>
                 </div>
               </div>
