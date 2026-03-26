@@ -10,7 +10,7 @@
  * - Ship cases in batch
  */
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
@@ -95,7 +95,12 @@ const CasesShippedToCustomer = () => {
   const [statsUserName, setStatsUserName] = useState("");
   const [totalCaseShippedToday, setTotalCaseShippedToday] = useState(0);
   const [totalCaseShippedThisWeek, setTotalCaseShippedThisWeek] = useState(0);
+  const [totalCaseShippedAllUsersToday, setTotalCaseShippedAllUsersToday] =
+    useState(0);
+  const [totalCaseShippedAllUsersThisWeek, setTotalCaseShippedAllUsersThisWeek] =
+    useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
+  const trackingNumberInputRef = useRef(null);
 
   const todayDate = useMemo(() => new Date().toLocaleDateString(), []);
 
@@ -118,6 +123,12 @@ const CasesShippedToCustomer = () => {
       if (response.status === "success") {
         setTotalCaseShippedToday(response.data?.totalCaseShippedToday || 0);
         setTotalCaseShippedThisWeek(response.data?.totalCaseShippedThisWeek || 0);
+        setTotalCaseShippedAllUsersToday(
+          response.data?.totalCaseShippedAllUsersToday || 0,
+        );
+        setTotalCaseShippedAllUsersThisWeek(
+          response.data?.totalCaseShippedAllUsersThisWeek || 0,
+        );
         if (response.data?.userName) {
           setStatsUserName(response.data.userName);
         }
@@ -269,9 +280,15 @@ const CasesShippedToCustomer = () => {
   }, [trackingNumber]);
 
   const handleValidateCases = async () => {
+    const focusTrackingNumberField = () => {
+      trackingNumberInputRef.current?.focus();
+      trackingNumberInputRef.current?.select();
+    };
+
     const inputCaseIds = parseCaseIds(caseInput);
     if (inputCaseIds.length === 0) {
       setError("Please enter at least one numeric case ID");
+      focusTrackingNumberField();
       return;
     }
 
@@ -393,6 +410,7 @@ const CasesShippedToCustomer = () => {
     setInvalidCases(nextInvalidCases);
     setCaseInput("");
     setValidatingCases(false);
+    focusTrackingNumberField();
   };
 
   const resetEntryFields = () => {
@@ -674,6 +692,18 @@ const CasesShippedToCustomer = () => {
                     </span>{" "}
                     {statsLoading ? "Loading..." : totalCaseShippedThisWeek}
                   </p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Cases shipped by ALL users today:
+                    </span>{" "}
+                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersToday}
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      Cases shipped by ALL users this week:
+                    </span>{" "}
+                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersThisWeek}
+                  </p>
                 </div>
               </div>
             </div>
@@ -816,6 +846,7 @@ const CasesShippedToCustomer = () => {
                     </label>
                     <div className="flex gap-2">
                       <input
+                        ref={trackingNumberInputRef}
                         type="text"
                         value={trackingNumber}
                         onChange={(event) =>
