@@ -122,7 +122,7 @@ const PopOnBacklogReport = () => {
     <Layout showLogout={true} title="PopOn Backlog Report">
       <div className="space-y-6">
         {/* Header Section */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -144,7 +144,7 @@ const PopOnBacklogReport = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
+          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-400">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <svg
@@ -172,7 +172,7 @@ const PopOnBacklogReport = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
+          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-400">
             <div className="flex items-center">
               <div className="p-2 bg-orange-100 rounded-lg">
                 <svg
@@ -202,7 +202,7 @@ const PopOnBacklogReport = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-200">
+          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-400">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <svg
@@ -239,7 +239,7 @@ const PopOnBacklogReport = () => {
         </div>
 
         {/* Data Table */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <p className="text-gray-600">{MESSAGES.LOADING}</p>
