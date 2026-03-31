@@ -10,7 +10,13 @@
  * - Ship cases in batch
  */
 
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useAuth } from "../contexts/AuthContext";
 import CaseIdLink from "../components/common/CaseIdLink";
 import Layout from "../components/layout/Layout";
@@ -99,8 +105,10 @@ const CasesShippedToCustomer = () => {
   const [totalCaseShippedThisWeek, setTotalCaseShippedThisWeek] = useState(0);
   const [totalCaseShippedAllUsersToday, setTotalCaseShippedAllUsersToday] =
     useState(0);
-  const [totalCaseShippedAllUsersThisWeek, setTotalCaseShippedAllUsersThisWeek] =
-    useState(0);
+  const [
+    totalCaseShippedAllUsersThisWeek,
+    setTotalCaseShippedAllUsersThisWeek,
+  ] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
   const trackingNumberInputRef = useRef(null);
 
@@ -124,7 +132,9 @@ const CasesShippedToCustomer = () => {
 
       if (response.status === "success") {
         setTotalCaseShippedToday(response.data?.totalCaseShippedToday || 0);
-        setTotalCaseShippedThisWeek(response.data?.totalCaseShippedThisWeek || 0);
+        setTotalCaseShippedThisWeek(
+          response.data?.totalCaseShippedThisWeek || 0,
+        );
         setTotalCaseShippedAllUsersToday(
           response.data?.totalCaseShippedAllUsersToday || 0,
         );
@@ -320,6 +330,7 @@ const CasesShippedToCustomer = () => {
           caseStatus: "-",
           reason: "Duplicate Input",
           details: "",
+          isCaseNotFound: false,
         });
         continue;
       }
@@ -332,6 +343,7 @@ const CasesShippedToCustomer = () => {
           caseStatus: "-",
           reason: "Duplicate Input",
           details: "",
+          isCaseNotFound: false,
         });
         continue;
       }
@@ -362,8 +374,8 @@ const CasesShippedToCustomer = () => {
               caseStatus: result.caseStatus || "-",
               reason: "Payment Default Carrier",
               details:
-                result.message ||
-                "Ship Carrier is set to Payment Default (59)",
+                result.message || "Ship Carrier is set to Payment Default (59)",
+              isCaseNotFound: false,
             });
           } else if (!result.invoiceApprovedForPayment) {
             nextInvalidCases.push({
@@ -371,6 +383,7 @@ const CasesShippedToCustomer = () => {
               caseStatus: result.caseStatus || "-",
               reason: "Invoice Not Approved",
               details: "Invoice approval for payment is required",
+              isCaseNotFound: false,
             });
           } else if (openCount > 0) {
             nextInvalidCases.push({
@@ -378,6 +391,7 @@ const CasesShippedToCustomer = () => {
               caseStatus: result.caseStatus || "-",
               reason: "Open Ticket",
               details: `Open ticket count: ${openCount}`,
+              isCaseNotFound: false,
             });
           } else {
             nextInvalidCases.push({
@@ -385,6 +399,7 @@ const CasesShippedToCustomer = () => {
               caseStatus: result.caseStatus || "-",
               reason: "Validation Failed",
               details: "Case failed shipping validation",
+              isCaseNotFound: false,
             });
           }
 
@@ -410,6 +425,7 @@ const CasesShippedToCustomer = () => {
             : isNotFound
               ? "No matching case record was found"
               : message || "Failed to validate case",
+          isCaseNotFound: isNotFound,
         });
         existingIds.add(caseId);
       }
@@ -706,13 +722,17 @@ const CasesShippedToCustomer = () => {
                     <span className="font-semibold text-gray-900">
                       Cases shipped by ALL users today:
                     </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersToday}
+                    {statsLoading
+                      ? "Loading..."
+                      : totalCaseShippedAllUsersToday}
                   </p>
                   <p className="text-xs text-gray-500 mb-1">
                     <span className="font-semibold text-gray-900">
                       Cases shipped by ALL users this week:
                     </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersThisWeek}
+                    {statsLoading
+                      ? "Loading..."
+                      : totalCaseShippedAllUsersThisWeek}
                   </p>
                 </div>
               </div>
@@ -1069,10 +1089,16 @@ const CasesShippedToCustomer = () => {
                     {invalidCases.map((item, index) => (
                       <tr key={`${item.caseId}-${index}`}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          <CaseIdLink
-                            caseId={item.caseId}
-                            className="font-medium text-gray-900 underline hover:text-blue-700"
-                          />
+                          {item.isCaseNotFound ? (
+                            <span className="font-medium text-gray-900">
+                              {item.caseId}
+                            </span>
+                          ) : (
+                            <CaseIdLink
+                              caseId={item.caseId}
+                              className="font-medium text-gray-900 underline hover:text-blue-700"
+                            />
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.caseStatus || "-"}

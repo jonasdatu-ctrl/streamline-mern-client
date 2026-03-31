@@ -247,6 +247,9 @@ const GenericCaseStatusUpdate = () => {
               {
                 caseId,
                 reason: response.message || "Unknown error",
+                isCaseNotFound: String(response.message || "")
+                  .toLowerCase()
+                  .includes("not found"),
               },
             ]);
           }
@@ -264,6 +267,9 @@ const GenericCaseStatusUpdate = () => {
             {
               caseId,
               reason: err.message || "Failed to update case status",
+              isCaseNotFound: String(err.message || "")
+                .toLowerCase()
+                .includes("not found"),
             },
           ]);
         }
@@ -659,10 +665,16 @@ const GenericCaseStatusUpdate = () => {
                       {notFoundCases.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                            <CaseIdLink
-                              caseId={item.caseId}
-                              className="font-medium text-red-600 underline hover:text-red-700"
-                            />
+                            {item.isCaseNotFound ? (
+                              <span className="font-medium text-red-600">
+                                {item.caseId}
+                              </span>
+                            ) : (
+                              <CaseIdLink
+                                caseId={item.caseId}
+                                className="font-medium text-red-600 underline hover:text-red-700"
+                              />
+                            )}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {item.reason}

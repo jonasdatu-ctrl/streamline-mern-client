@@ -577,10 +577,9 @@ const ShopifyCasesReceived = () => {
                       {invalidCases.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                            <CaseIdLink
-                              caseId={item.caseId}
-                              className="font-medium text-red-600 underline hover:text-red-700"
-                            />
+                            <span className="font-medium text-red-600">
+                              {item.caseId}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {item.reason}

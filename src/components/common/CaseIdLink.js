@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { getCaseDetailRoute } from "../../config/constants";
 
 const CaseIdLink = ({ caseId, className = "", children }) => {
@@ -11,9 +10,14 @@ const CaseIdLink = ({ caseId, className = "", children }) => {
   }
 
   return (
-    <Link to={getCaseDetailRoute(normalizedCaseId)} className={className}>
+    <a
+      href={getCaseDetailRoute(normalizedCaseId)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+    >
       {content}
-    </Link>
+    </a>
   );
 };
 
