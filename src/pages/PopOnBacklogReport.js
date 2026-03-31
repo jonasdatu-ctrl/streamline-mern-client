@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import CaseIdLink from "../components/common/CaseIdLink";
 import Layout from "../components/layout/Layout";
 import { MESSAGES } from "../config/constants";
 import { apiGet } from "../utils/api";
@@ -300,7 +301,10 @@ const PopOnBacklogReport = () => {
                       } hover:bg-blue-50 transition-colors`}
                     >
                       <td className="px-6 py-4 text-sm font-medium text-blue-600">
-                        {item.Case_ID}
+                        <CaseIdLink
+                          caseId={item.Case_ID}
+                          className="font-medium text-blue-600 underline hover:text-blue-700"
+                        />
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {item.FirstName}

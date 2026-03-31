@@ -9,11 +9,18 @@
 export const ROUTES = {
   HOME: "/",
   DASHBOARD: "/dashboard",
+  CASE_DETAIL: "/dashboard/cases/:caseId",
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
   GENERIC_CASE_STATUS_UPDATE: "/dashboard/generic-case-status-update",
   CASES_SHIPPED_TO_CUSTOMER: "/dashboard/cases-shipped-to-customer",
   POPON_BACKLOG_REPORT: "/dashboard/popon-backlog-report",
 };
+
+export const getCaseDetailRoute = (caseId) =>
+  ROUTES.CASE_DETAIL.replace(
+    ":caseId",
+    encodeURIComponent(String(caseId || "").trim()),
+  );
 
 /**
  * User-facing messages

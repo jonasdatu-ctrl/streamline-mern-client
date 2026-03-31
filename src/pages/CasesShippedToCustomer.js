@@ -12,6 +12,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import CaseIdLink from "../components/common/CaseIdLink";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -90,6 +91,7 @@ const CasesShippedToCustomer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [trackingWarning, setTrackingWarning] = useState("");
+  const [trackingWarningCaseIds, setTrackingWarningCaseIds] = useState([]);
   const [checkingTrackingNumber, setCheckingTrackingNumber] = useState(false);
 
   const [statsUserName, setStatsUserName] = useState("");
@@ -238,6 +240,7 @@ const CasesShippedToCustomer = () => {
 
     setTrackingNumber(buildGeneratedTrackingNumber(numericCarrierId));
     setTrackingWarning("");
+    setTrackingWarningCaseIds([]);
     setError("");
   };
 
@@ -246,6 +249,7 @@ const CasesShippedToCustomer = () => {
 
     if (!normalizedTracking) {
       setTrackingWarning("");
+      setTrackingWarningCaseIds([]);
       setCheckingTrackingNumber(false);
       return;
     }
@@ -264,13 +268,18 @@ const CasesShippedToCustomer = () => {
 
         if (duplicateCaseIds.length > 0) {
           setTrackingWarning(
-            `Tracking Number ${normalizedTracking} is already used for Cases ${duplicateCaseIds.join(", ")}`,
+            `Tracking Number ${normalizedTracking} is already used for Cases`,
+          );
+          setTrackingWarningCaseIds(
+            duplicateCaseIds.map((caseId) => String(caseId).trim()),
           );
         } else {
           setTrackingWarning("");
+          setTrackingWarningCaseIds([]);
         }
       } catch {
         setTrackingWarning("");
+        setTrackingWarningCaseIds([]);
       } finally {
         setCheckingTrackingNumber(false);
       }
@@ -417,6 +426,7 @@ const CasesShippedToCustomer = () => {
     setCaseInput("");
     setTrackingNumber("");
     setTrackingWarning("");
+    setTrackingWarningCaseIds([]);
     setBarcodeValue("");
     setValidCases([]);
     setInvalidCases([]);
@@ -765,7 +775,10 @@ const CasesShippedToCustomer = () => {
                     {validCases.map((item) => (
                       <tr key={item.caseId}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
+                          <CaseIdLink
+                            caseId={item.caseId}
+                            className="font-medium text-gray-900 underline hover:text-blue-700"
+                          />
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.customerName || "-"}
@@ -869,7 +882,21 @@ const CasesShippedToCustomer = () => {
 
                 {trackingWarning && (
                   <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    {trackingWarning}
+                    <span>{trackingWarning}</span>
+                    {trackingWarningCaseIds.length > 0 && (
+                      <span>
+                        {" "}
+                        {trackingWarningCaseIds.map((caseId, index) => (
+                          <React.Fragment key={caseId}>
+                            {index > 0 ? ", " : ""}
+                            <CaseIdLink
+                              caseId={caseId}
+                              className="font-semibold underline hover:no-underline text-amber-900"
+                            />
+                          </React.Fragment>
+                        ))}
+                      </span>
+                    )}
                   </div>
                 )}
 
@@ -947,7 +974,10 @@ const CasesShippedToCustomer = () => {
                     {shippedCases.map((item) => (
                       <tr key={item.caseId}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
+                          <CaseIdLink
+                            caseId={item.caseId}
+                            className="font-medium text-gray-900 underline hover:text-blue-700"
+                          />
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.customerName || "-"}
@@ -1039,7 +1069,10 @@ const CasesShippedToCustomer = () => {
                     {invalidCases.map((item, index) => (
                       <tr key={`${item.caseId}-${index}`}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
+                          <CaseIdLink
+                            caseId={item.caseId}
+                            className="font-medium text-gray-900 underline hover:text-blue-700"
+                          />
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.caseStatus || "-"}

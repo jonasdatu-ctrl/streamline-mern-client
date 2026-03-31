@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import CaseIdLink from "../components/common/CaseIdLink";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -437,9 +438,10 @@ const ShopifyCasesReceived = () => {
                         className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
                       >
                         <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full"></div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {item.caseId}
-                        </span>
+                        <CaseIdLink
+                          caseId={item.caseId}
+                          className="text-sm font-medium text-gray-900 underline hover:text-blue-700"
+                        />
                         <span className="ml-auto text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                           {item.status}
                         </span>
@@ -499,7 +501,10 @@ const ShopifyCasesReceived = () => {
                       {existingCases.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-600">
-                            {item.caseId}
+                            <CaseIdLink
+                              caseId={item.caseId}
+                              className="font-medium text-purple-600 underline hover:text-purple-700"
+                            />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.customerName}
@@ -572,7 +577,10 @@ const ShopifyCasesReceived = () => {
                       {invalidCases.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                            {item.caseId}
+                            <CaseIdLink
+                              caseId={item.caseId}
+                              className="font-medium text-red-600 underline hover:text-red-700"
+                            />
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {item.reason}
@@ -632,7 +640,10 @@ const ShopifyCasesReceived = () => {
                       {successfulCases.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                            {item.caseId}
+                            <CaseIdLink
+                              caseId={item.caseId}
+                              className="font-medium text-green-600 underline hover:text-green-700"
+                            />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.status}
