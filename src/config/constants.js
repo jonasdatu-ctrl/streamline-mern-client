@@ -50,6 +50,17 @@ export const MESSAGES = {
 export const NAV_ITEMS = [
   { label: "Home", key: "home", route: ROUTES.DASHBOARD },
   {
+    label: "Cases",
+    key: "cases",
+    children: [
+      {
+        label: "Search Cases",
+        key: "search-cases",
+        route: null,
+      },
+    ],
+  },
+  {
     label: "Transaction Manager (Tags)",
     key: "transaction-manager",
     children: [

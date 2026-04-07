@@ -6,12 +6,17 @@
  * and main content area on the right.
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { useNavigate, useLocation } from "react-router-dom";
+import { matchPath, useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../config/firebase";
-import { NAV_ITEMS, MESSAGES, ROUTES } from "../../config/constants";
+import {
+  getCaseDetailRoute,
+  NAV_ITEMS,
+  MESSAGES,
+  ROUTES,
+} from "../../config/constants";
 import Button from "../common/Button";
 
 /**
@@ -26,8 +31,41 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({
+    cases: true,
     "transaction-manager": true,
   }); // Default expanded
+  const caseDetailMatch = matchPath(ROUTES.CASE_DETAIL, location.pathname);
+  const currentCaseId = caseDetailMatch?.params?.caseId || "";
+  const caseNavigationItem = currentCaseId
+    ? {
+        label: decodeURIComponent(currentCaseId),
+        key: `case-${currentCaseId}`,
+        route: getCaseDetailRoute(currentCaseId),
+      }
+    : null;
+  const navigationItems = NAV_ITEMS.map((item) => {
+    if (item.key !== "cases") {
+      return item;
+    }
+
+    return {
+      ...item,
+      children: caseNavigationItem
+        ? [...item.children, caseNavigationItem]
+        : item.children,
+    };
+  });
+
+  useEffect(() => {
+    if (!currentCaseId) {
+      return;
+    }
+
+    setExpandedMenus((prev) => ({
+      ...prev,
+      cases: true,
+    }));
+  }, [currentCaseId]);
 
   /**
    * Handle user logout
@@ -75,7 +113,11 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
    * @returns {boolean} Whether the route is active
    */
   const isActiveRoute = (route) => {
-    return location.pathname === route;
+    if (!route) {
+      return false;
+    }
+
+    return Boolean(matchPath(route, location.pathname));
   };
 
   return (
@@ -123,10 +165,16 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
 
           {/* Navigation Menu */}
           <nav className="flex-1 px-4 py-6 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {navigationItems.map((item) => {
               const hasChildren = item.children && item.children.length > 0;
               const isExpanded = expandedMenus[item.key];
-              const isActive = item.route && isActiveRoute(item.route);
+              const isActive = Boolean(
+                (item.route && isActiveRoute(item.route)) ||
+                  (hasChildren &&
+                    item.children.some(
+                      (child) => child.route && isActiveRoute(child.route),
+                    )),
+              );
 
               return (
                 <div key={item.key}>
@@ -171,6 +219,21 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
                               strokeLinejoin="round"
                               strokeWidth={2}
                               d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                            />
+                          </svg>
+                        )}
+                        {item.key === "cases" && (
+                          <svg
+                            className="w-full h-full"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
                         )}
