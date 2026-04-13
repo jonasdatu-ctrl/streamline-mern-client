@@ -3,19 +3,6 @@ import { useParams } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import { apiGet } from "../utils/api";
 
-const formatDate = (value) => {
-  if (!value) {
-    return "-";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return date.toLocaleDateString();
-};
-
 const CaseDetails = () => {
   const { caseId } = useParams();
   const normalizedCaseId = useMemo(
@@ -25,6 +12,11 @@ const CaseDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [caseInfo, setCaseInfo] = useState(null);
+  const [warnings, setWarnings] = useState({
+    awaitingMyDentalRxImport: false,
+    isYearEndClosed: false,
+  });
+  const [allowSave, setAllowSave] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,10 +44,21 @@ const CaseDetails = () => {
 
         if (response.status === "success" && response.data?.exists) {
           setCaseInfo(response.data.caseInfo || null);
+          setWarnings({
+            awaitingMyDentalRxImport:
+              Boolean(response.data?.warnings?.awaitingMyDentalRxImport),
+            isYearEndClosed: Boolean(response.data?.warnings?.isYearEndClosed),
+          });
+          setAllowSave(Boolean(response.data?.allowSave));
           return;
         }
 
         setCaseInfo(null);
+        setWarnings({
+          awaitingMyDentalRxImport: false,
+          isYearEndClosed: false,
+        });
+        setAllowSave(true);
       } catch (fetchError) {
         if (!isMounted) {
           return;
@@ -89,39 +92,52 @@ const CaseDetails = () => {
     .filter(Boolean)
     .join(" ");
 
-  const caseDetailsFields = [
-    {
-      label: "Case ID",
-      value: caseInfo?.Case_ID || normalizedCaseId || "-",
-    },
-    {
-      label: "Patient",
-      value: patientDisplay || "-",
-    },
-    {
-      label: "Current Status",
-      value: caseInfo?.Status_Streamline_Options || "-",
-    },
-    {
-      label: "Rush Order",
-      value: Number(caseInfo?.IsRushOrder) === 1 ? "Yes" : "No",
-    },
-    {
-      label: "Case Received",
-      value: formatDate(caseInfo?.Case_Date_Received),
-    },
-    {
-      label: "Original Due Date",
-      value: formatDate(caseInfo?.OriginalRXDueDate),
-    },
-  ];
+  const isRushOrder = Number(caseInfo?.IsRushOrder || 0) === 1;
+
+  // Assigned variables for upcoming modules (kept ready for Section 1/2/3 wiring).
+  const caseVariables = useMemo(
+    () => ({
+      caseId: caseInfo?.Case_ID || normalizedCaseId || "",
+      caseStatusCode: caseInfo?.Case_Status_Code || "",
+      caseTags: caseInfo?.caseTags || "",
+      shopifyEmail: caseInfo?.Shopify_Email || "",
+      doctorUserId: caseInfo?.UserId || caseInfo?.Case_User_ID || "",
+      doctorFirstName: caseInfo?.DoctorFirstName || "",
+      doctorLastName: caseInfo?.DoctorLastName || "",
+      customerId: caseInfo?.Case_Customer_ID || "",
+      customerAccountNumber: caseInfo?.Customer_Account_Number || "",
+      customerDisplayName: caseInfo?.Customer_Display_Name || "",
+      accountingHold: caseInfo?.AccountingHold || "",
+      dueDate: caseInfo?.Case_Date_Required_By_DR || "",
+      promisedDate: caseInfo?.Case_Date_Estimated_Return || "",
+      dateCaseReceived: caseInfo?.Case_Date_Received || "",
+      packageType: caseInfo?.PackageType || "",
+      paymentTermId: caseInfo?.PaymentTermId || "",
+      poNumber: caseInfo?.PO_Number || "",
+      originalRxDueDate: caseInfo?.OriginalRXDueDate || "",
+      invoiceApprovedForPayment: caseInfo?.Invoice_Approved_For_Payment || "",
+      allowSave,
+      warnings,
+    }),
+    [allowSave, caseInfo, normalizedCaseId, warnings],
+  );
+
+  const importNowUrl = useMemo(() => {
+    const caseValue = encodeURIComponent(String(normalizedCaseId || "").trim());
+    const retUrl = encodeURIComponent(
+      `https://www.streamlinedental.com/epanel/EditCase.asp?CaseId=${caseValue}`,
+    );
+    return `/Secure/ImportMyDentalRxOrders.asp?retUrl=${retUrl}`;
+  }, [normalizedCaseId]);
 
   return (
     <Layout showLogout={true} title="Case Details">
       <div className="space-y-6">
         <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h1 className="text-xl font-semibold text-gray-900">Case Details</h1>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Case Details
+            </h1>
             <p className="mt-1 text-sm text-gray-600">
               Core case identity and status information.
             </p>
@@ -147,21 +163,37 @@ const CaseDetails = () => {
             )}
 
             {!loading && !error && caseInfo && (
-              <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                {caseDetailsFields.map((field) => (
-                  <div
-                    key={field.label}
-                    className="rounded-lg border border-gray-200 bg-white px-4 py-3"
-                  >
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      {field.label}
-                    </dt>
-                    <dd className="mt-1 text-sm font-medium text-gray-900">
-                      {field.value || "-"}
-                    </dd>
+              <div className="space-y-4">
+                {warnings.awaitingMyDentalRxImport && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    Error: CaseID awaiting data import from MyDentalRx. To import immediately, please click{" "}
+                    <a
+                      className="font-semibold underline"
+                      href={importNowUrl}
+                    >
+                      here
+                    </a>
+                    .
                   </div>
-                ))}
-              </dl>
+                )}
+
+                {warnings.isYearEndClosed && (
+                  <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-base font-bold text-red-800">
+                    CASE INVOICE IS CLOSED. CANNOT SAVE OR ADJUST CASE
+                  </div>
+                )}
+
+                <div className="rounded-lg border border-gray-200 bg-white px-4 py-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Case ID: {caseVariables.caseId || "-"} - Patient: {patientDisplay || "-"}
+                  </h2>
+                  {isRushOrder && (
+                    <p className="mt-2 text-sm font-bold uppercase tracking-wide text-red-700">
+                      Rush Order
+                    </p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
