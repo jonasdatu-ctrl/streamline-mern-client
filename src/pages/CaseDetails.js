@@ -3,6 +3,15 @@ import { useParams } from "react-router-dom";
 import Layout from "../components/layout/Layout";
 import { apiGet } from "../utils/api";
 
+const getLabDisplay = (caseInfo) => {
+  const name = String(caseInfo?.LabName || "").trim();
+  const nation = String(caseInfo?.LabNation || "").trim();
+  if (!name) {
+    return "";
+  }
+  return nation ? `${name} - ${nation}` : name;
+};
+
 const CaseDetails = () => {
   const { caseId } = useParams();
   const normalizedCaseId = useMemo(
@@ -17,6 +26,15 @@ const CaseDetails = () => {
     isYearEndClosed: false,
   });
   const [allowSave, setAllowSave] = useState(true);
+  const [editableFields, setEditableFields] = useState({
+    statusText: "",
+    labText: "",
+  });
+  const [savedFields, setSavedFields] = useState({
+    statusText: "",
+    labText: "",
+  });
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -43,13 +61,24 @@ const CaseDetails = () => {
         }
 
         if (response.status === "success" && response.data?.exists) {
-          setCaseInfo(response.data.caseInfo || null);
+          const nextCaseInfo = response.data.caseInfo || null;
+          setCaseInfo(nextCaseInfo);
           setWarnings({
-            awaitingMyDentalRxImport:
-              Boolean(response.data?.warnings?.awaitingMyDentalRxImport),
+            awaitingMyDentalRxImport: Boolean(
+              response.data?.warnings?.awaitingMyDentalRxImport,
+            ),
             isYearEndClosed: Boolean(response.data?.warnings?.isYearEndClosed),
           });
           setAllowSave(Boolean(response.data?.allowSave));
+          const initialFields = {
+            statusText: String(
+              nextCaseInfo?.Status_Streamline_Options || "",
+            ).trim(),
+            labText: getLabDisplay(nextCaseInfo),
+          };
+          setEditableFields(initialFields);
+          setSavedFields(initialFields);
+          setSaveMessage("");
           return;
         }
 
@@ -59,6 +88,15 @@ const CaseDetails = () => {
           isYearEndClosed: false,
         });
         setAllowSave(true);
+        setEditableFields({
+          statusText: "",
+          labText: "",
+        });
+        setSavedFields({
+          statusText: "",
+          labText: "",
+        });
+        setSaveMessage("");
       } catch (fetchError) {
         if (!isMounted) {
           return;
@@ -94,7 +132,40 @@ const CaseDetails = () => {
 
   const isRushOrder =
     Number(caseInfo?.IsRushOrderFlag || 0) === 1 ||
-    String(caseInfo?.IsRushOrder || "").trim().toUpperCase() === "Y";
+    String(caseInfo?.IsRushOrder || "")
+      .trim()
+      .toUpperCase() === "Y";
+
+  const hasUnsavedChanges =
+    editableFields.statusText !== savedFields.statusText ||
+    editableFields.labText !== savedFields.labText;
+
+  const actionButtons = [
+    "View Internal RX",
+    "Update Status",
+    "Digital Redo",
+    "Generate Invoice",
+    "Customer Portal",
+    "Shopify",
+  ];
+
+  const handleEditableFieldChange = (field, value) => {
+    setEditableFields((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+    setSaveMessage("");
+  };
+
+  const handleSaveChanges = () => {
+    setSavedFields(editableFields);
+    setSaveMessage("Changes saved for this section.");
+  };
+
+  const handleDiscardChanges = () => {
+    setEditableFields(savedFields);
+    setSaveMessage("Changes discarded.");
+  };
 
   // Assigned variables for upcoming modules (kept ready for Section 1/2/3 wiring).
   const caseVariables = useMemo(
@@ -168,11 +239,9 @@ const CaseDetails = () => {
               <div className="space-y-4">
                 {warnings.awaitingMyDentalRxImport && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                    Error: CaseID awaiting data import from MyDentalRx. To import immediately, please click{" "}
-                    <a
-                      className="font-semibold underline"
-                      href={importNowUrl}
-                    >
+                    Error: CaseID awaiting data import from MyDentalRx. To
+                    import immediately, please click{" "}
+                    <a className="font-semibold underline" href={importNowUrl}>
                       here
                     </a>
                     .
@@ -195,9 +264,99 @@ const CaseDetails = () => {
 
                 <div className="rounded-lg border border-gray-200 bg-white px-4 py-4">
                   <h2 className="text-xl font-semibold text-gray-900">
-                    Case ID: {caseVariables.caseId || "-"} - Patient: {patientDisplay || "-"}
+                    Case ID: {caseVariables.caseId || "-"} - Patient:{" "}
+                    {patientDisplay || "-"}
                   </h2>
                 </div>
+
+                <section className="rounded-lg border border-gray-200 bg-white px-4 py-4">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+                        Section 1: General Case Info
+                      </h3>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {actionButtons.map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          className="rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-100"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        Status
+                      </h4>
+
+                      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                            Case Status
+                          </span>
+                          <input
+                            type="text"
+                            value={editableFields.statusText}
+                            onChange={(e) =>
+                              handleEditableFieldChange(
+                                "statusText",
+                                e.target.value,
+                              )
+                            }
+                            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 focus:border-blue-500"
+                          />
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                            Lab
+                          </span>
+                          <input
+                            type="text"
+                            value={editableFields.labText}
+                            onChange={(e) =>
+                              handleEditableFieldChange(
+                                "labText",
+                                e.target.value,
+                              )
+                            }
+                            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 focus:border-blue-500"
+                          />
+                        </label>
+                      </div>
+
+                      {hasUnsavedChanges && (
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleSaveChanges}
+                            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDiscardChanges}
+                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                          >
+                            Discard Changes
+                          </button>
+                        </div>
+                      )}
+
+                      {saveMessage && (
+                        <p className="mt-3 text-sm text-green-700">
+                          {saveMessage}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
               </div>
             )}
           </div>
