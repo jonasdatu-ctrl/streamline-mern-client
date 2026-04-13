@@ -167,7 +167,7 @@ const CaseDetails = () => {
             {!loading && !error && caseInfo && (
               <div className="space-y-4">
                 {warnings.awaitingMyDentalRxImport && (
-                  <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
                     Error: CaseID awaiting data import from MyDentalRx. To import immediately, please click{" "}
                     <a
                       className="font-semibold underline"
@@ -180,8 +180,16 @@ const CaseDetails = () => {
                 )}
 
                 {warnings.isYearEndClosed && (
-                  <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-base font-bold text-red-800">
-                    CASE INVOICE IS CLOSED. CANNOT SAVE OR ADJUST CASE
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                    Case invoice is closed. Cannot save or adjust case.
+                  </div>
+                )}
+
+                {isRushOrder && (
+                  <div>
+                    <span className="inline-flex items-center rounded-md bg-red-900 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+                      Rush Order
+                    </span>
                   </div>
                 )}
 
@@ -189,11 +197,6 @@ const CaseDetails = () => {
                   <h2 className="text-xl font-semibold text-gray-900">
                     Case ID: {caseVariables.caseId || "-"} - Patient: {patientDisplay || "-"}
                   </h2>
-                  {isRushOrder && (
-                    <p className="mt-2 text-sm font-bold uppercase tracking-wide text-red-700">
-                      Rush Order
-                    </p>
-                  )}
                 </div>
               </div>
             )}
