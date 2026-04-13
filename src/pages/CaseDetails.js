@@ -26,15 +26,6 @@ const CaseDetails = () => {
     isYearEndClosed: false,
   });
   const [allowSave, setAllowSave] = useState(true);
-  const [editableFields, setEditableFields] = useState({
-    statusText: "",
-    labText: "",
-  });
-  const [savedFields, setSavedFields] = useState({
-    statusText: "",
-    labText: "",
-  });
-  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -70,15 +61,6 @@ const CaseDetails = () => {
             isYearEndClosed: Boolean(response.data?.warnings?.isYearEndClosed),
           });
           setAllowSave(Boolean(response.data?.allowSave));
-          const initialFields = {
-            statusText: String(
-              nextCaseInfo?.Status_Streamline_Options || "",
-            ).trim(),
-            labText: getLabDisplay(nextCaseInfo),
-          };
-          setEditableFields(initialFields);
-          setSavedFields(initialFields);
-          setSaveMessage("");
           return;
         }
 
@@ -88,15 +70,6 @@ const CaseDetails = () => {
           isYearEndClosed: false,
         });
         setAllowSave(true);
-        setEditableFields({
-          statusText: "",
-          labText: "",
-        });
-        setSavedFields({
-          statusText: "",
-          labText: "",
-        });
-        setSaveMessage("");
       } catch (fetchError) {
         if (!isMounted) {
           return;
@@ -136,10 +109,6 @@ const CaseDetails = () => {
       .trim()
       .toUpperCase() === "Y";
 
-  const hasUnsavedChanges =
-    editableFields.statusText !== savedFields.statusText ||
-    editableFields.labText !== savedFields.labText;
-
   const actionButtons = [
     "View Internal RX",
     "Update Status",
@@ -148,24 +117,6 @@ const CaseDetails = () => {
     "Customer Portal",
     "Shopify",
   ];
-
-  const handleEditableFieldChange = (field, value) => {
-    setEditableFields((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    setSaveMessage("");
-  };
-
-  const handleSaveChanges = () => {
-    setSavedFields(editableFields);
-    setSaveMessage("Changes saved for this section.");
-  };
-
-  const handleDiscardChanges = () => {
-    setEditableFields(savedFields);
-    setSaveMessage("Changes discarded.");
-  };
 
   // Assigned variables for upcoming modules (kept ready for Section 1/2/3 wiring).
   const caseVariables = useMemo(
@@ -295,65 +246,24 @@ const CaseDetails = () => {
                       </h4>
 
                       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <label className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1">
                           <span className="text-xs font-semibold uppercase tracking-wide text-red-700">
                             Case Status
                           </span>
-                          <input
-                            type="text"
-                            value={editableFields.statusText}
-                            onChange={(e) =>
-                              handleEditableFieldChange(
-                                "statusText",
-                                e.target.value,
-                              )
-                            }
-                            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 focus:border-blue-500"
-                          />
-                        </label>
+                          <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-red-700">
+                            {caseInfo?.Status_Streamline_Options || "-"}
+                          </div>
+                        </div>
 
-                        <label className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1">
                           <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
                             Lab
                           </span>
-                          <input
-                            type="text"
-                            value={editableFields.labText}
-                            onChange={(e) =>
-                              handleEditableFieldChange(
-                                "labText",
-                                e.target.value,
-                              )
-                            }
-                            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-0 focus:border-blue-500"
-                          />
-                        </label>
-                      </div>
-
-                      {hasUnsavedChanges && (
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleSaveChanges}
-                            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleDiscardChanges}
-                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                          >
-                            Discard Changes
-                          </button>
+                          <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900">
+                            {getLabDisplay(caseInfo) || "-"}
+                          </div>
                         </div>
-                      )}
-
-                      {saveMessage && (
-                        <p className="mt-3 text-sm text-green-700">
-                          {saveMessage}
-                        </p>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </section>
