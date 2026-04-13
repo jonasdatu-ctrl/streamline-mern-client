@@ -92,7 +92,9 @@ const CaseDetails = () => {
     .filter(Boolean)
     .join(" ");
 
-  const isRushOrder = Number(caseInfo?.IsRushOrder || 0) === 1;
+  const isRushOrder =
+    Number(caseInfo?.IsRushOrderFlag || 0) === 1 ||
+    String(caseInfo?.IsRushOrder || "").trim().toUpperCase() === "Y";
 
   // Assigned variables for upcoming modules (kept ready for Section 1/2/3 wiring).
   const caseVariables = useMemo(
