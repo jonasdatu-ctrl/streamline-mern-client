@@ -135,34 +135,45 @@ const RushCasesReport = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                           Customer Name
                         </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Days Passed not in Finishing
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
                       {rows.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={7}
                             className="px-4 py-6 text-center text-gray-500"
                           >
                             No rush cases found.
                           </td>
                         </tr>
                       ) : (
-                        rows.map((row) => (
+                        rows.map((row) => {
+                          const isRedRow =
+            row.Has_1603 === 1 &&
+            Number(row.Days_Passed_Not_In_Finishing) >= 4;
+                          return (
                           <tr
                             key={row.Case_ID}
-                            className="hover:bg-gray-50 transition-colors"
+                            className={`transition-colors ${
+                              isRedRow
+                                ? "bg-red-50 hover:bg-red-100"
+                                : "hover:bg-gray-50"
+                            }`}
                           >
-                            <td className="px-4 py-3 font-medium text-gray-900">
+                            <td className={`px-4 py-3 font-medium ${ isRedRow ? "text-red-900" : "text-gray-900" }`}>
                               {row.Case_ID}
                             </td>
-                            <td className="px-4 py-3 text-gray-700">
+                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
                               {row.Status || "-"}
                             </td>
-                            <td className="px-4 py-3 text-gray-700">
+                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
                               {formatDate(row.Received_Date)}
                             </td>
-                            <td className="px-4 py-3 text-gray-700">
+                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
                               {formatDate(row.Last_Status_Update)}
                             </td>
                             <td className="px-4 py-3">
@@ -170,11 +181,17 @@ const RushCasesReport = () => {
                                 Rush
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-gray-700">
+                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
                               {row.Customer_Name || "-"}
                             </td>
+                            <td className={`px-4 py-3 font-semibold ${ isRedRow ? "text-red-700" : "text-gray-700" }`}>
+                              {row.Days_Passed_Not_In_Finishing != null
+                                ? `${row.Days_Passed_Not_In_Finishing}d`
+                                : "-"}
+                            </td>
                           </tr>
-                        ))
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
