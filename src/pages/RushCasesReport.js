@@ -185,8 +185,10 @@ const RushCasesReport = () => {
                               {row.Customer_Name || "-"}
                             </td>
                             <td className={`px-4 py-3 font-semibold ${ isRedRow ? "text-red-700" : "text-gray-700" }`}>
-                              {row.Days_Passed_Not_In_Finishing != null
-                                ? `${row.Days_Passed_Not_In_Finishing}d`
+                              {row.Has_1603 === 1
+                                ? ""
+                                : row.Days_Passed_Not_In_Finishing != null
+                                ? row.Days_Passed_Not_In_Finishing
                                 : "-"}
                             </td>
                           </tr>
