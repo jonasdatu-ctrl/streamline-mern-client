@@ -32,14 +32,15 @@ const RushCasesReport = () => {
   // cursors[0] is always null (first page needs no cursor).
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0); // 0-based
+  const [onlyDelayed, setOnlyDelayed] = useState(false);
 
-  const fetchPage = useCallback(async (cursor, targetIndex) => {
+  const fetchPage = useCallback(async (cursor, targetIndex, delayed) => {
     setLoading(true);
     setError("");
     try {
       const params = cursor
-        ? `?cursorDate=${encodeURIComponent(cursor.date)}&cursorId=${cursor.id}`
-        : "";
+        ? `?cursorDate=${encodeURIComponent(cursor.date)}&cursorId=${cursor.id}${delayed ? "&onlyDelayed=1" : ""}`
+        : delayed ? "?onlyDelayed=1" : "";
       const response = await apiGet(`/reports/rush-cases${params}`);
       if (response.status === "success") {
         setRows(response.data || []);
@@ -69,18 +70,26 @@ const RushCasesReport = () => {
 
   // Initial load
   useEffect(() => {
-    fetchPage(null, 0);
-  }, [fetchPage]);
+    fetchPage(null, 0, onlyDelayed);
+  }, [fetchPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleToggleDelayed = () => {
+    const next = !onlyDelayed;
+    setOnlyDelayed(next);
+    setCursors([null]);
+    setPageIndex(0);
+    fetchPage(null, 0, next);
+  };
 
   const handleNext = () => {
     const nextIndex = pageIndex + 1;
-    fetchPage(cursors[nextIndex], nextIndex);
+    fetchPage(cursors[nextIndex], nextIndex, onlyDelayed);
   };
 
   const handlePrev = () => {
     if (pageIndex === 0) return;
     const prevIndex = pageIndex - 1;
-    fetchPage(cursors[prevIndex], prevIndex);
+    fetchPage(cursors[prevIndex], prevIndex, onlyDelayed);
   };
 
   return (
@@ -112,6 +121,25 @@ const RushCasesReport = () => {
 
             {!loading && !error && (
               <>
+                {/* Filter toggle */}
+                <div className="mb-4 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleToggleDelayed}
+                    className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      onlyDelayed
+                        ? "border-red-600 bg-red-600 text-white hover:bg-red-700"
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${
+                        onlyDelayed ? "bg-white" : "bg-red-500"
+                      }`}
+                    />
+                    Only display delayed orders (&ge;&nbsp;4 days passed)
+                  </button>
+                </div>
                 {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 text-sm">
