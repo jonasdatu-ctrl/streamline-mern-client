@@ -5,6 +5,7 @@
  * Displays all cases marked as rush orders.
  * Columns: Case ID, Status, Received Date, Last Status Update, Rush, Customer Name
  * Sorted by received date (latest first), paginated 20 per page.
+ * Uses keyset (seek) pagination — constant query cost regardless of depth.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -22,30 +23,38 @@ const formatDate = (raw) => {
 
 const RushCasesReport = () => {
   const [rows, setRows] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: PAGE_SIZE,
-    totalCount: 0,
-    totalPages: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hasMore, setHasMore] = useState(false);
 
-  const fetchPage = useCallback(async (page) => {
+  // Cursor history allows back-navigation without re-fetching arbitrarily deep pages.
+  // cursors[i] is the cursor passed to fetch page i (0-based).
+  // cursors[0] is always null (first page needs no cursor).
+  const [cursors, setCursors] = useState([null]);
+  const [pageIndex, setPageIndex] = useState(0); // 0-based
+
+  const fetchPage = useCallback(async (cursor, targetIndex) => {
     setLoading(true);
     setError("");
     try {
-      const response = await apiGet(`/reports/rush-cases?page=${page}`);
+      const params = cursor
+        ? `?cursorDate=${encodeURIComponent(cursor.date)}&cursorId=${cursor.id}`
+        : "";
+      const response = await apiGet(`/reports/rush-cases${params}`);
       if (response.status === "success") {
         setRows(response.data || []);
-        setPagination(
-          response.pagination || {
-            page,
-            pageSize: PAGE_SIZE,
-            totalCount: 0,
-            totalPages: 0,
-          },
-        );
+        const more = Boolean(response.hasMore);
+        setHasMore(more);
+        setPageIndex(targetIndex);
+        // Cache the cursor for the next page if we don't have it yet
+        if (more && response.nextCursor) {
+          setCursors((prev) => {
+            if (prev[targetIndex + 1] !== undefined) return prev;
+            const updated = [...prev];
+            updated[targetIndex + 1] = response.nextCursor;
+            return updated;
+          });
+        }
       } else {
         setError("Failed to load rush cases.");
         setRows([]);
@@ -58,23 +67,21 @@ const RushCasesReport = () => {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
-    fetchPage(1);
+    fetchPage(null, 0);
   }, [fetchPage]);
 
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > pagination.totalPages) return;
-    fetchPage(newPage);
+  const handleNext = () => {
+    const nextIndex = pageIndex + 1;
+    fetchPage(cursors[nextIndex], nextIndex);
   };
 
-  const startRow =
-    pagination.totalCount === 0
-      ? 0
-      : (pagination.page - 1) * pagination.pageSize + 1;
-  const endRow = Math.min(
-    pagination.page * pagination.pageSize,
-    pagination.totalCount,
-  );
+  const handlePrev = () => {
+    if (pageIndex === 0) return;
+    const prevIndex = pageIndex - 1;
+    fetchPage(cursors[prevIndex], prevIndex);
+  };
 
   return (
     <Layout showLogout={true} title="Rush Cases Report">
@@ -174,92 +181,30 @@ const RushCasesReport = () => {
                 </div>
 
                 {/* Pagination */}
-                {pagination.totalPages > 0 && (
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm text-gray-600">
-                      {pagination.totalCount === 0
-                        ? "No results"
-                        : `Showing ${startRow}–${endRow} of ${pagination.totalCount} cases`}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handlePageChange(1)}
-                        disabled={pagination.page === 1}
-                        className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        «
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePageChange(pagination.page - 1)}
-                        disabled={pagination.page === 1}
-                        className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        ‹
-                      </button>
-
-                      {/* Page number buttons (show up to 5 around current) */}
-                      {Array.from(
-                        { length: pagination.totalPages },
-                        (_, i) => i + 1,
-                      )
-                        .filter(
-                          (p) =>
-                            p === 1 ||
-                            p === pagination.totalPages ||
-                            Math.abs(p - pagination.page) <= 2,
-                        )
-                        .reduce((acc, p, idx, arr) => {
-                          if (idx > 0 && p - arr[idx - 1] > 1) {
-                            acc.push("...");
-                          }
-                          acc.push(p);
-                          return acc;
-                        }, [])
-                        .map((item, idx) =>
-                          item === "..." ? (
-                            <span
-                              key={`ellipsis-${idx}`}
-                              className="px-2 text-sm text-gray-500"
-                            >
-                              …
-                            </span>
-                          ) : (
-                            <button
-                              key={item}
-                              type="button"
-                              onClick={() => handlePageChange(item)}
-                              className={`rounded border px-2.5 py-1 text-sm font-medium transition-colors ${
-                                item === pagination.page
-                                  ? "border-blue-600 bg-blue-600 text-white"
-                                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
-                              }`}
-                            >
-                              {item}
-                            </button>
-                          ),
-                        )}
-
-                      <button
-                        type="button"
-                        onClick={() => handlePageChange(pagination.page + 1)}
-                        disabled={pagination.page === pagination.totalPages}
-                        className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        ›
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePageChange(pagination.totalPages)}
-                        disabled={pagination.page === pagination.totalPages}
-                        className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        »
-                      </button>
-                    </div>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-gray-600">
+                    Page {pageIndex + 1}
+                    {!hasMore ? " · Last page" : ""}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      disabled={pageIndex === 0 || loading}
+                      className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={!hasMore || loading}
+                      className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next →
+                    </button>
                   </div>
-                )}
+                </div>
               </>
             )}
           </div>
