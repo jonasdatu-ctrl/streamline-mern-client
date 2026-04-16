@@ -153,7 +153,7 @@ const RushCasesReport = () => {
                       ) : (
                         rows.map((row) => {
                           const isRedRow =
-            row.Has_1603 === 1 &&
+            row.Has_1603 === 0 &&
             Number(row.Days_Passed_Not_In_Finishing) >= 4;
                           return (
                           <tr
