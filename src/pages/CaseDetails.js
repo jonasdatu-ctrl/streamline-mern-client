@@ -405,8 +405,18 @@ const CaseDetails = () => {
 
                       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div className="flex flex-col gap-1">
-                          <span className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-red-700 flex items-center gap-1">
                             Case Status
+                            {caseInfo?.Status_Description && (
+                              <span className="relative group">
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 text-gray-600 text-xs font-bold cursor-default select-none">
+                                  ?
+                                </span>
+                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-md bg-gray-800 px-3 py-2 text-xs font-normal normal-case text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-normal">
+                                  {caseInfo.Status_Description}
+                                </span>
+                              </span>
+                            )}
                           </span>
                           <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-red-700">
                             {caseInfo?.Status_Streamline_Options || "-"}
