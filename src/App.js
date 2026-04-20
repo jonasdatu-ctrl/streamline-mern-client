@@ -15,7 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import ShopifyCasesReceived from "./pages/ShopifyCasesReceived";
 import GenericCaseStatusUpdate from "./pages/GenericCaseStatusUpdate";
 import CasesShippedToCustomer from "./pages/CasesShippedToCustomer";
-import PopOnBacklogReport from "./pages/PopOnBacklogReport";
+import RushCasesReport from "./pages/RushCasesReport";
 import { ROUTES } from "./config/constants";
 
 /**
@@ -74,10 +74,10 @@ function App() {
 
             {/* Protected routes - Reports and Analytics nested pages */}
             <Route
-              path={ROUTES.POPON_BACKLOG_REPORT}
+              path={ROUTES.RUSH_CASES_REPORT}
               element={
                 <ProtectedRoute>
-                  <PopOnBacklogReport />
+                  <RushCasesReport />
                 </ProtectedRoute>
               }
             />
