@@ -3,8 +3,9 @@
  * Rush Cases Report Page Component
  *
  * Displays all cases marked as rush orders.
- * Columns: Case ID, Status, Received Date, Last Status Update, Rush, Customer Name
- * Sorted by received date (latest first), paginated 20 per page.
+ * Columns: Case ID, Customer Name, Current Status, Status Group, Received Date,
+ * Last Status Update, Rush, Doctor Name, Days in Lab
+ * Sorted by received date (oldest first), paginated 20 per page.
  * Uses keyset (seek) pagination — constant query cost regardless of depth.
  */
 
@@ -26,21 +27,30 @@ const RushCasesReport = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasMore, setHasMore] = useState(false);
+  const [statusGroupOptions, setStatusGroupOptions] = useState([]);
 
   // Cursor history allows back-navigation without re-fetching arbitrarily deep pages.
   // cursors[i] is the cursor passed to fetch page i (0-based).
   // cursors[0] is always null (first page needs no cursor).
   const [cursors, setCursors] = useState([null]);
   const [pageIndex, setPageIndex] = useState(0); // 0-based
-  const [onlyDelayed, setOnlyDelayed] = useState(false);
+  const [minDaysInLab, setMinDaysInLab] = useState(0);
+  const [statusGroupFilter, setStatusGroupFilter] = useState("");
 
-  const fetchPage = useCallback(async (cursor, targetIndex, delayed) => {
+  const fetchPage = useCallback(async (cursor, targetIndex) => {
     setLoading(true);
     setError("");
     try {
-      const params = cursor
-        ? `?cursorDate=${encodeURIComponent(cursor.date)}&cursorId=${cursor.id}${delayed ? "&onlyDelayed=1" : ""}`
-        : delayed ? "?onlyDelayed=1" : "";
+      const searchParams = new URLSearchParams();
+      if (cursor) {
+        searchParams.set("cursorDate", cursor.date);
+        searchParams.set("cursorId", String(cursor.id));
+      }
+      searchParams.set("minDaysInLab", String(minDaysInLab));
+      if (statusGroupFilter) {
+        searchParams.set("statusGroup", statusGroupFilter);
+      }
+      const params = searchParams.toString() ? `?${searchParams.toString()}` : "";
       const response = await apiGet(`/reports/rush-cases${params}`);
       if (response.status === "success") {
         setRows(response.data || []);
@@ -66,30 +76,43 @@ const RushCasesReport = () => {
     } finally {
       setLoading(false);
     }
+  }, [minDaysInLab, statusGroupFilter]);
+
+  const fetchStatusGroupOptions = useCallback(async () => {
+    try {
+      const response = await apiGet("/reports/rush-cases/status-groups");
+      if (response.status === "success") {
+        const options = (response.data || [])
+          .map((row) => row.Status_Group)
+          .filter(Boolean);
+        setStatusGroupOptions(options);
+      }
+    } catch (err) {
+      // Keep the table usable even if filter options fail to load.
+      setStatusGroupOptions([]);
+    }
   }, []);
 
   // Initial load
   useEffect(() => {
-    fetchPage(null, 0, onlyDelayed);
-  }, [fetchPage]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchStatusGroupOptions();
+  }, [fetchStatusGroupOptions]);
 
-  const handleToggleDelayed = () => {
-    const next = !onlyDelayed;
-    setOnlyDelayed(next);
+  useEffect(() => {
     setCursors([null]);
     setPageIndex(0);
-    fetchPage(null, 0, next);
-  };
+    fetchPage(null, 0);
+  }, [fetchPage]);
 
   const handleNext = () => {
     const nextIndex = pageIndex + 1;
-    fetchPage(cursors[nextIndex], nextIndex, onlyDelayed);
+    fetchPage(cursors[nextIndex], nextIndex);
   };
 
   const handlePrev = () => {
     if (pageIndex === 0) return;
     const prevIndex = pageIndex - 1;
-    fetchPage(cursors[prevIndex], prevIndex, onlyDelayed);
+    fetchPage(cursors[prevIndex], prevIndex);
   };
 
   return (
@@ -101,12 +124,51 @@ const RushCasesReport = () => {
               Rush Cases Report
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              All cases marked as rush orders, sorted by received date (latest
+              All cases marked as rush orders, sorted by received date (oldest
               first).
             </p>
           </div>
 
           <div className="p-6">
+            <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Days in Lab (greater than or equal to)
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={minDaysInLab}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value || "0", 10);
+                      setMinDaysInLab(Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
+                    }}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    Status Group
+                  </span>
+                  <select
+                    value={statusGroupFilter}
+                    onChange={(e) => setStatusGroupFilter(e.target.value)}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="">All Status Groups</option>
+                    {statusGroupOptions.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+
             {loading && (
               <div className="rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                 Loading rush cases...
@@ -121,26 +183,6 @@ const RushCasesReport = () => {
 
             {!loading && !error && (
               <>
-                {/* Filter toggle */}
-                <div className="mb-4 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleToggleDelayed}
-                    className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
-                      onlyDelayed
-                        ? "border-red-600 bg-red-600 text-white hover:bg-red-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-2 w-2 rounded-full ${
-                        onlyDelayed ? "bg-white" : "bg-red-500"
-                      }`}
-                    />
-                    Only display delayed orders (&ge;&nbsp;4 days passed)
-                  </button>
-                </div>
-                {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 text-sm">
                     <thead className="bg-gray-50">
@@ -149,7 +191,13 @@ const RushCasesReport = () => {
                           Case ID
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Status
+                          Customer Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Current Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Status Group
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                           Received Date
@@ -161,10 +209,10 @@ const RushCasesReport = () => {
                           Rush
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Customer Name
+                          Doctor Name
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Days Passed not in Finishing
+                          Days in Lab
                         </th>
                       </tr>
                     </thead>
@@ -172,7 +220,7 @@ const RushCasesReport = () => {
                       {rows.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={9}
                             className="px-4 py-6 text-center text-gray-500"
                           >
                             No rush cases found.
@@ -181,45 +229,51 @@ const RushCasesReport = () => {
                       ) : (
                         rows.map((row) => {
                           const isRedRow =
-            row.Has_1603 === 0 &&
-            Number(row.Days_Passed_Not_In_Finishing) >= 4;
+                            row.Has_1603 === 0 &&
+                            Number(row.Days_Passed_Not_In_Finishing) >= 4;
                           return (
-                          <tr
-                            key={row.Case_ID}
-                            className={`transition-colors ${
-                              isRedRow
-                                ? "bg-red-50 hover:bg-red-100"
-                                : "hover:bg-gray-50"
-                            }`}
-                          >
-                            <td className={`px-4 py-3 font-medium ${ isRedRow ? "text-red-900" : "text-gray-900" }`}>
-                              {row.Case_ID}
-                            </td>
-                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
-                              {row.Status || "-"}
-                            </td>
-                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
-                              {formatDate(row.Received_Date)}
-                            </td>
-                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
-                              {formatDate(row.Last_Status_Update)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="inline-flex items-center rounded-md bg-red-900 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-white">
-                                Rush
-                              </span>
-                            </td>
-                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
-                              {row.Customer_Name || "-"}
-                            </td>
-                            <td className={`px-4 py-3 font-semibold ${ isRedRow ? "text-red-700" : "text-gray-700" }`}>
-                              {row.Has_1603 === 1
-                                ? ""
-                                : row.Days_Passed_Not_In_Finishing != null
-                                ? row.Days_Passed_Not_In_Finishing
-                                : "-"}
-                            </td>
-                          </tr>
+                            <tr
+                              key={row.Case_ID}
+                              className={`transition-colors ${
+                                isRedRow
+                                  ? "bg-red-50 hover:bg-red-100"
+                                  : "hover:bg-gray-50"
+                              }`}
+                            >
+                              <td className={`px-4 py-3 font-medium ${isRedRow ? "text-red-900" : "text-gray-900"}`}>
+                                {row.Case_ID}
+                              </td>
+                              <td className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}>
+                                {row.Customer_Name || "-"}
+                              </td>
+                              <td className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}>
+                                {row.Status || "-"}
+                              </td>
+                              <td className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}>
+                                {row.Status_Group || "-"}
+                              </td>
+                              <td className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}>
+                                {formatDate(row.Received_Date)}
+                              </td>
+                              <td className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}>
+                                {formatDate(row.Last_Status_Update)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center rounded-md bg-red-900 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-white">
+                                  Rush
+                                </span>
+                              </td>
+                              <td className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}>
+                                {row.Doctor_Name || "-"}
+                              </td>
+                              <td className={`px-4 py-3 font-semibold ${isRedRow ? "text-red-700" : "text-gray-700"}`}>
+                                {row.Has_1603 === 1
+                                  ? ""
+                                  : row.Days_Passed_Not_In_Finishing != null
+                                  ? row.Days_Passed_Not_In_Finishing
+                                  : "-"}
+                              </td>
+                            </tr>
                           );
                         })
                       )}
@@ -227,7 +281,6 @@ const RushCasesReport = () => {
                   </table>
                 </div>
 
-                {/* Pagination */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-gray-600">
                     Page {pageIndex + 1}
