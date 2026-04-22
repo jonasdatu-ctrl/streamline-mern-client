@@ -3,7 +3,8 @@
  * Rush Cases Report Page Component
  *
  * Displays all cases marked as rush orders.
- * Columns: Case ID, Status, Received Date, Last Status Update, Rush, Customer Name
+ * Columns: Case ID, Customer Name, Current Status, Status Group, Received Date,
+ * Last Status Update, Rush, Doctor Name, Days in Lab
  * Sorted by received date (latest first), paginated 20 per page.
  * Uses keyset (seek) pagination — constant query cost regardless of depth.
  */
@@ -149,7 +150,13 @@ const RushCasesReport = () => {
                           Case ID
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Status
+                          Customer Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Current Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Status Group
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                           Received Date
@@ -161,10 +168,10 @@ const RushCasesReport = () => {
                           Rush
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Customer Name
+                          Doctor Name
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Days Passed not in Finishing
+                          Days in Lab
                         </th>
                       </tr>
                     </thead>
@@ -172,7 +179,7 @@ const RushCasesReport = () => {
                       {rows.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={9}
                             className="px-4 py-6 text-center text-gray-500"
                           >
                             No rush cases found.
@@ -196,7 +203,13 @@ const RushCasesReport = () => {
                               {row.Case_ID}
                             </td>
                             <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
+                              {row.Customer_Name || "-"}
+                            </td>
+                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
                               {row.Status || "-"}
+                            </td>
+                            <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
+                              {row.Status_Group || "-"}
                             </td>
                             <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
                               {formatDate(row.Received_Date)}
@@ -210,7 +223,7 @@ const RushCasesReport = () => {
                               </span>
                             </td>
                             <td className={`px-4 py-3 ${ isRedRow ? "text-red-800" : "text-gray-700" }`}>
-                              {row.Customer_Name || "-"}
+                              {row.Doctor_Name || "-"}
                             </td>
                             <td className={`px-4 py-3 font-semibold ${ isRedRow ? "text-red-700" : "text-gray-700" }`}>
                               {row.Has_1603 === 1
