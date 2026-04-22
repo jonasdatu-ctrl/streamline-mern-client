@@ -5,7 +5,7 @@
  * Displays all cases marked as rush orders.
  * Columns: Case ID, Customer Name, Current Status, Status Group, Received Date,
  * Last Status Update, Rush, Doctor Name, Days in Lab
- * Sorted by received date (latest first), paginated 20 per page.
+ * Sorted by received date (oldest first), paginated 20 per page.
  * Uses keyset (seek) pagination — constant query cost regardless of depth.
  */
 
@@ -102,7 +102,7 @@ const RushCasesReport = () => {
               Rush Cases Report
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              All cases marked as rush orders, sorted by received date (latest
+              All cases marked as rush orders, sorted by received date (oldest
               first).
             </p>
           </div>
