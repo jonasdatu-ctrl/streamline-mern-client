@@ -134,7 +134,7 @@ const RushCasesReport = () => {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <label className="flex flex-col gap-1">
                   <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Days in Lab
+                    Days in Lab (greater than o equal to)
                   </span>
                   <input
                     type="number"

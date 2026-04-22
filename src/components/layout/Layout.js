@@ -78,6 +78,15 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
     return location.pathname === route;
   };
 
+  /**
+   * Check whether any child route in a menu item is active.
+   * @param {Array} children - Child navigation items
+   * @returns {boolean} Whether any child route matches the current path
+   */
+  const hasActiveChildRoute = (children = []) => {
+    return children.some((child) => child.route && isActiveRoute(child.route));
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
@@ -125,7 +134,8 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
           <nav className="flex-1 px-4 py-6 space-y-1">
             {NAV_ITEMS.map((item) => {
               const hasChildren = item.children && item.children.length > 0;
-              const isExpanded = expandedMenus[item.key];
+              const hasActiveChild = hasChildren && hasActiveChildRoute(item.children);
+              const isExpanded = expandedMenus[item.key] ?? hasActiveChild;
               const isActive = item.route && isActiveRoute(item.route);
 
               return (
