@@ -35,6 +35,7 @@ const GenericCaseStatusUpdate = () => {
   const [processingCases, setProcessingCases] = useState([]);
   const [successfulCases, setSuccessfulCases] = useState([]);
   const [notFoundCases, setNotFoundCases] = useState([]);
+  const [copiedSection, setCopiedSection] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [todayDate] = useState(new Date().toLocaleDateString());
@@ -306,6 +307,51 @@ const GenericCaseStatusUpdate = () => {
     }
 
     setCaseInput(value);
+  };
+
+  const writeToClipboard = async (text) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (!copied) {
+      throw new Error("Copy command failed");
+    }
+  };
+
+  const handleCopyCaseIds = async (cases, sectionKey) => {
+    const caseIds = cases
+      .map((item) => String(item.caseId || "").trim())
+      .filter(Boolean);
+
+    if (caseIds.length === 0) {
+      return;
+    }
+
+    try {
+      // Newline-separated IDs paste into spreadsheets as one case ID per row.
+      await writeToClipboard(caseIds.join("\n"));
+      setCopiedSection(sectionKey);
+      setTimeout(() => {
+        setCopiedSection((current) =>
+          current === sectionKey ? null : current,
+        );
+      }, 1800);
+    } catch (err) {
+      setError("Unable to copy case IDs. Please try again.");
+    }
   };
 
   const totalProcessed =
@@ -623,14 +669,24 @@ const GenericCaseStatusUpdate = () => {
             {/* Cases Not Found */}
             <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-red-50 border-b border-red-200 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Cases Not Processed
-                  {notFoundCases.length > 0 && (
-                    <span className="ml-2 inline-block bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      {notFoundCases.length}
-                    </span>
-                  )}
-                </h2>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Cases Not Processed
+                    {notFoundCases.length > 0 && (
+                      <span className="ml-2 inline-block bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {notFoundCases.length}
+                      </span>
+                    )}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCaseIds(notFoundCases, "notFound")}
+                    disabled={notFoundCases.length === 0}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-md border border-red-300 text-red-700 bg-white hover:bg-red-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {copiedSection === "notFound" ? "Copied" : "Copy Case IDs"}
+                  </button>
+                </div>
                 <p className="text-xs text-gray-600 mt-1">
                   Cases that were not processed successfully
                 </p>
@@ -673,14 +729,28 @@ const GenericCaseStatusUpdate = () => {
             {/* Ready for Update (Successfully Found) */}
             <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-green-50 border-b border-green-200 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Cases processed successfully
-                  {successfulCases.length > 0 && (
-                    <span className="ml-2 inline-block bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      {successfulCases.length}
-                    </span>
-                  )}
-                </h2>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Cases processed successfully
+                    {successfulCases.length > 0 && (
+                      <span className="ml-2 inline-block bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {successfulCases.length}
+                      </span>
+                    )}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopyCaseIds(successfulCases, "successful")
+                    }
+                    disabled={successfulCases.length === 0}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-md border border-green-300 text-green-700 bg-white hover:bg-green-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {copiedSection === "successful"
+                      ? "Copied"
+                      : "Copy Case IDs"}
+                  </button>
+                </div>
                 <p className="text-xs text-gray-600 mt-1">
                   Cases that were processed successfully
                 </p>
