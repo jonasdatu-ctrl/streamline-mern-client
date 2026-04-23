@@ -111,7 +111,21 @@ const RushCasesReport = () => {
 
   const handleNext = () => {
     const nextIndex = pageIndex + 1;
-    fetchPage(cursors[nextIndex], nextIndex);
+    const fallbackLastRow = rows.length > 0 ? rows[rows.length - 1] : null;
+    const nextCursor =
+      cursors[nextIndex] ||
+      (fallbackLastRow
+        ? {
+            date: fallbackLastRow.Received_Date,
+            id: fallbackLastRow.Case_ID,
+          }
+        : null);
+
+    if (!nextCursor) {
+      return;
+    }
+
+    fetchPage(nextCursor, nextIndex);
   };
 
   const handlePrev = () => {
@@ -230,7 +244,7 @@ const RushCasesReport = () => {
                       {rows.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={9}
+                            colSpan={10}
                             className="px-4 py-6 text-center text-gray-500"
                           >
                             No rush cases found.
