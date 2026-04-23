@@ -101,6 +101,7 @@ const CasesShippedToCustomer = () => {
     useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
   const trackingNumberInputRef = useRef(null);
+  const caseInputRef = useRef(null);
 
   const todayDate = useMemo(() => new Date().toLocaleDateString(), []);
 
@@ -595,6 +596,13 @@ const CasesShippedToCustomer = () => {
       });
 
       resetEntryFields();
+      // Focus the case input field for easy scanning of next batch
+      if (caseInputRef.current) {
+        setTimeout(() => {
+          caseInputRef.current.focus();
+          caseInputRef.current.select();
+        }, 100);
+      }
     } catch (err) {
       setError(err.message || "Failed to ship cases");
     } finally {
@@ -631,6 +639,7 @@ const CasesShippedToCustomer = () => {
                   Enter multiple case IDs, one per line.
                 </p>
                 <textarea
+                  ref={caseInputRef}
                   value={caseInput}
                   onChange={(event) => setCaseInput(event.target.value)}
                   placeholder="123456&#10;123457&#10;123458"
