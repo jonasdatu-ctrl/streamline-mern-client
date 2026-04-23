@@ -116,7 +116,7 @@ const RushCasesReport = () => {
       cursors[nextIndex] ||
       (fallbackLastRow
         ? {
-            date: fallbackLastRow.Received_Date,
+            date: fallbackLastRow.Cursor_Received_Date,
             id: fallbackLastRow.Case_ID,
           }
         : null);
