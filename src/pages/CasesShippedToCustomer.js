@@ -77,6 +77,7 @@ const CasesShippedToCustomer = () => {
   const { currentUser } = useAuth();
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrierId, setSelectedCarrierId] = useState("0");
+  const [batchMode, setBatchMode] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [barcodeValue, setBarcodeValue] = useState("");
   const [caseInput, setCaseInput] = useState("");
@@ -280,13 +281,13 @@ const CasesShippedToCustomer = () => {
     return () => clearTimeout(timeoutId);
   }, [trackingNumber]);
 
-  const handleValidateCases = async () => {
+  const handleValidateCases = async (inputOverride) => {
     const focusTrackingNumberField = () => {
       trackingNumberInputRef.current?.focus();
       trackingNumberInputRef.current?.select();
     };
 
-    const inputCaseIds = parseCaseIds(caseInput);
+    const inputCaseIds = parseCaseIds(inputOverride ?? caseInput);
     if (inputCaseIds.length === 0) {
       setError("Please enter at least one numeric case ID");
       focusTrackingNumberField();
@@ -412,6 +413,29 @@ const CasesShippedToCustomer = () => {
     setCaseInput("");
     setValidatingCases(false);
     focusTrackingNumberField();
+  };
+
+  const handleSingleCaseInputKeyDown = async (event) => {
+    if (batchMode || event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (validatingCases || submitting) {
+      return;
+    }
+
+    const normalizedCaseId = String(event.currentTarget.value || "")
+      .replace(/\D/g, "")
+      .trim();
+
+    if (!normalizedCaseId) {
+      return;
+    }
+
+    setCaseInput(normalizedCaseId);
+    await handleValidateCases(normalizedCaseId);
   };
 
   const resetEntryFields = () => {
@@ -636,16 +660,61 @@ const CasesShippedToCustomer = () => {
                   Case ID Input
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Enter multiple case IDs, one per line.
+                  {batchMode
+                    ? "Enter multiple case IDs, one per line. Scanner Enter adds a new line."
+                    : "Scan or enter one case ID, then Enter auto-validates and moves focus to tracking number."}
                 </p>
-                <textarea
-                  ref={caseInputRef}
-                  value={caseInput}
-                  onChange={(event) => setCaseInput(event.target.value)}
-                  placeholder="123456&#10;123457&#10;123458"
-                  disabled={validatingCases || submitting}
-                  className="w-full h-56 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
-                />
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setBatchMode(false)}
+                    disabled={validatingCases || submitting}
+                    className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                      !batchMode
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    Single
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBatchMode(true)}
+                    disabled={validatingCases || submitting}
+                    className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                      batchMode
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    Batch
+                  </button>
+                </div>
+
+                {batchMode ? (
+                  <textarea
+                    ref={caseInputRef}
+                    value={caseInput}
+                    onChange={(event) => setCaseInput(event.target.value)}
+                    placeholder="123456&#10;123457&#10;123458"
+                    disabled={validatingCases || submitting}
+                    className="w-full h-56 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+                  />
+                ) : (
+                  <input
+                    ref={caseInputRef}
+                    type="text"
+                    value={caseInput}
+                    onChange={(event) =>
+                      setCaseInput(event.target.value.replace(/\D/g, ""))
+                    }
+                    onKeyDown={handleSingleCaseInputKeyDown}
+                    placeholder="123456"
+                    disabled={validatingCases || submitting}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
