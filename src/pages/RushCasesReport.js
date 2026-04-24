@@ -14,6 +14,7 @@ import Layout from "../components/layout/Layout";
 import { apiGet } from "../utils/api";
 
 const PAGE_SIZE = 20;
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 const formatDate = (raw) => {
   if (!raw) return "-";
@@ -36,6 +37,7 @@ const RushCasesReport = () => {
   const [pageIndex, setPageIndex] = useState(0); // 0-based
   const [minDaysInLab, setMinDaysInLab] = useState(0);
   const [statusGroupFilter, setStatusGroupFilter] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const fetchPage = useCallback(
     async (cursor, targetIndex) => {
@@ -134,6 +136,69 @@ const RushCasesReport = () => {
     fetchPage(cursors[prevIndex], prevIndex);
   };
 
+  const handleExportCurrentFilterView = async () => {
+    setExporting(true);
+    setError("");
+
+    try {
+      const searchParams = new URLSearchParams();
+      searchParams.set("minDaysInLab", String(minDaysInLab));
+      if (statusGroupFilter) {
+        searchParams.set("statusGroup", statusGroupFilter);
+      }
+
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(
+        `${API_BASE_URL}/reports/rush-cases/export?${searchParams.toString()}`,
+        {
+          method: "GET",
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : {},
+        },
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        window.location.href = "/";
+        return;
+      }
+
+      if (!response.ok) {
+        let message = "Failed to export rush cases report.";
+        try {
+          const errorData = await response.json();
+          message = errorData.message || message;
+        } catch {
+          // Ignore parse failure and use fallback message.
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const contentDisposition =
+        response.headers.get("Content-Disposition") || "";
+      const fileNameMatch = contentDisposition.match(/filename="([^"]+)"/i);
+      const fileName = fileNameMatch?.[1] || "rush-cases.csv";
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setError(err.message || "Failed to export rush cases report.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <Layout showLogout={true} title="Rush Cases Report">
       <div className="space-y-6">
@@ -150,7 +215,7 @@ const RushCasesReport = () => {
 
           <div className="p-6">
             <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
                 <label className="flex flex-col gap-1">
                   <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
                     Days in Lab (greater than or equal to)
@@ -187,6 +252,17 @@ const RushCasesReport = () => {
                     ))}
                   </select>
                 </label>
+
+                <div className="flex items-end xl:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleExportCurrentFilterView}
+                    disabled={loading || exporting}
+                    className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 xl:w-auto"
+                  >
+                    {exporting ? "Exporting..." : "Export Current Filter View"}
+                  </button>
+                </div>
               </div>
             </div>
 
