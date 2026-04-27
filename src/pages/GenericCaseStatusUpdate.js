@@ -139,11 +139,8 @@ const GenericCaseStatusUpdate = () => {
    * Parse input to extract case IDs (one per line, numerals only)
    */
   const parseCaseIds = (input) => {
-    return input
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line && /^\d+$/.test(line))
-      .map((line) => line.trim());
+    const matches = String(input || "").match(/\d+/g);
+    return matches ? matches.map((id) => id.trim()).filter(Boolean) : [];
   };
 
   /**

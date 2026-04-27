@@ -50,12 +50,8 @@ const buildGeneratedTrackingNumber = (carrierId) => {
 };
 
 const parseCaseIds = (input) => {
-  return String(input || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/[^\d]/g, ""))
-    .filter(Boolean);
+  const matches = String(input || "").match(/\d+/g);
+  return matches ? matches.map((id) => id.trim()).filter(Boolean) : [];
 };
 
 const formatDisplayDate = (value) => {
