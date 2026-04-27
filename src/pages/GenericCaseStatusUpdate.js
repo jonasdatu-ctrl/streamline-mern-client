@@ -147,7 +147,9 @@ const GenericCaseStatusUpdate = () => {
    * Process all case IDs one by one
    */
   const handleProcess = async (inputOverride) => {
-    const caseIds = parseCaseIds(inputOverride ?? caseInput);
+    const resolvedInput =
+      typeof inputOverride === "string" ? inputOverride : caseInput;
+    const caseIds = parseCaseIds(resolvedInput);
 
     if (!selectedStatus) {
       setError("Please select a status");

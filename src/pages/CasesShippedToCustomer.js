@@ -293,7 +293,9 @@ const CasesShippedToCustomer = () => {
       trackingNumberInputRef.current?.select();
     };
 
-    const inputCaseIds = parseCaseIds(inputOverride ?? caseInput);
+    const resolvedInput =
+      typeof inputOverride === "string" ? inputOverride : caseInput;
+    const inputCaseIds = parseCaseIds(resolvedInput);
     if (inputCaseIds.length === 0) {
       setError("Please enter at least one numeric case ID");
       focusTrackingNumberField();
