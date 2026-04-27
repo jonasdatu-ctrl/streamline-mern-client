@@ -50,12 +50,8 @@ const buildGeneratedTrackingNumber = (carrierId) => {
 };
 
 const parseCaseIds = (input) => {
-  return String(input || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/[^\d]/g, ""))
-    .filter(Boolean);
+  const matches = String(input || "").match(/\d+/g);
+  return matches ? matches.map((id) => id.trim()).filter(Boolean) : [];
 };
 
 const formatDisplayDate = (value) => {
@@ -297,7 +293,9 @@ const CasesShippedToCustomer = () => {
       trackingNumberInputRef.current?.select();
     };
 
-    const inputCaseIds = parseCaseIds(inputOverride ?? caseInput);
+    const resolvedInput =
+      typeof inputOverride === "string" ? inputOverride : caseInput;
+    const inputCaseIds = parseCaseIds(resolvedInput);
     if (inputCaseIds.length === 0) {
       setError("Please enter at least one numeric case ID");
       focusTrackingNumberField();
