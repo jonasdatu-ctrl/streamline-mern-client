@@ -578,10 +578,11 @@ const GenericCaseStatusUpdate = () => {
                   <button
                     type="button"
                     onClick={() => setBatchProcessing(false)}
-                    className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                    disabled={loading}
+                    className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
                       !batchProcessing
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        ? "bg-gray-100 text-gray-900 border-gray-400"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     Single
@@ -589,10 +590,11 @@ const GenericCaseStatusUpdate = () => {
                   <button
                     type="button"
                     onClick={() => setBatchProcessing(true)}
-                    className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                    disabled={loading}
+                    className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
                       batchProcessing
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        ? "bg-gray-100 text-gray-900 border-gray-400"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     Batch
