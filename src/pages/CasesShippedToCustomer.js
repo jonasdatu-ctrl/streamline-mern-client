@@ -10,7 +10,13 @@
  * - Ship cases in batch
  */
 
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
@@ -98,8 +104,10 @@ const CasesShippedToCustomer = () => {
   const [totalCaseShippedThisWeek, setTotalCaseShippedThisWeek] = useState(0);
   const [totalCaseShippedAllUsersToday, setTotalCaseShippedAllUsersToday] =
     useState(0);
-  const [totalCaseShippedAllUsersThisWeek, setTotalCaseShippedAllUsersThisWeek] =
-    useState(0);
+  const [
+    totalCaseShippedAllUsersThisWeek,
+    setTotalCaseShippedAllUsersThisWeek,
+  ] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
   const trackingNumberInputRef = useRef(null);
   const caseInputRef = useRef(null);
@@ -124,7 +132,9 @@ const CasesShippedToCustomer = () => {
 
       if (response.status === "success") {
         setTotalCaseShippedToday(response.data?.totalCaseShippedToday || 0);
-        setTotalCaseShippedThisWeek(response.data?.totalCaseShippedThisWeek || 0);
+        setTotalCaseShippedThisWeek(
+          response.data?.totalCaseShippedThisWeek || 0,
+        );
         setTotalCaseShippedAllUsersToday(
           response.data?.totalCaseShippedAllUsersToday || 0,
         );
@@ -355,8 +365,7 @@ const CasesShippedToCustomer = () => {
               caseStatus: result.caseStatus || "-",
               reason: "Payment Default Carrier",
               details:
-                result.message ||
-                "Ship Carrier is set to Payment Default (59)",
+                result.message || "Ship Carrier is set to Payment Default (59)",
             });
           } else if (!result.invoiceApprovedForPayment) {
             nextInvalidCases.push({
@@ -672,8 +681,8 @@ const CasesShippedToCustomer = () => {
                     disabled={validatingCases || submitting}
                     className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
                       !batchMode
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        ? "bg-gray-100 text-gray-900 border-gray-400"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     Single
@@ -684,8 +693,8 @@ const CasesShippedToCustomer = () => {
                     disabled={validatingCases || submitting}
                     className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
                       batchMode
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        ? "bg-gray-100 text-gray-900 border-gray-400"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     Batch
@@ -774,13 +783,17 @@ const CasesShippedToCustomer = () => {
                     <span className="font-semibold text-gray-900">
                       Cases shipped by ALL users today:
                     </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersToday}
+                    {statsLoading
+                      ? "Loading..."
+                      : totalCaseShippedAllUsersToday}
                   </p>
                   <p className="text-xs text-gray-500 mb-1">
                     <span className="font-semibold text-gray-900">
                       Cases shipped by ALL users this week:
                     </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersThisWeek}
+                    {statsLoading
+                      ? "Loading..."
+                      : totalCaseShippedAllUsersThisWeek}
                   </p>
                 </div>
               </div>
