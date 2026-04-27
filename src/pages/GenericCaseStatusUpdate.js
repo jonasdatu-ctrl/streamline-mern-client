@@ -139,18 +139,17 @@ const GenericCaseStatusUpdate = () => {
    * Parse input to extract case IDs (one per line, numerals only)
    */
   const parseCaseIds = (input) => {
-    return input
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line && /^\d+$/.test(line))
-      .map((line) => line.trim());
+    const matches = String(input || "").match(/\d+/g);
+    return matches ? matches.map((id) => id.trim()).filter(Boolean) : [];
   };
 
   /**
    * Process all case IDs one by one
    */
   const handleProcess = async (inputOverride) => {
-    const caseIds = parseCaseIds(inputOverride ?? caseInput);
+    const resolvedInput =
+      typeof inputOverride === "string" ? inputOverride : caseInput;
+    const caseIds = parseCaseIds(resolvedInput);
 
     if (!selectedStatus) {
       setError("Please select a status");
