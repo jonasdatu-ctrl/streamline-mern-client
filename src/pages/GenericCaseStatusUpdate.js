@@ -11,7 +11,7 @@
  * - Display cases that couldn't be found
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -39,6 +39,7 @@ const GenericCaseStatusUpdate = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [todayDate] = useState(new Date().toLocaleDateString());
+  const caseInputRef = useRef(null);
 
   const getFilteredStatuses = () => {
     return statuses.filter((status) => {
@@ -148,8 +149,8 @@ const GenericCaseStatusUpdate = () => {
   /**
    * Process all case IDs one by one
    */
-  const handleProcess = async () => {
-    const caseIds = parseCaseIds(caseInput);
+  const handleProcess = async (inputOverride) => {
+    const caseIds = parseCaseIds(inputOverride ?? caseInput);
 
     if (!selectedStatus) {
       setError("Please select a status");
@@ -273,7 +274,38 @@ const GenericCaseStatusUpdate = () => {
       setError(`Error processing cases: ${err.message}`);
     } finally {
       setLoading(false);
+
+      if (!batchProcessing) {
+        setCaseInput("");
+        setTimeout(() => {
+          caseInputRef.current?.focus();
+          caseInputRef.current?.select();
+        }, 0);
+      }
     }
+  };
+
+  const handleSingleCaseInputKeyDown = (event) => {
+    if (batchProcessing || event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (loading) {
+      return;
+    }
+
+    const normalizedCaseId = String(event.currentTarget.value || "")
+      .replace(/\D/g, "")
+      .trim();
+
+    if (!normalizedCaseId || !selectedStatus) {
+      return;
+    }
+
+    setCaseInput(normalizedCaseId);
+    handleProcess(normalizedCaseId);
   };
 
   /**
@@ -542,25 +574,36 @@ const GenericCaseStatusUpdate = () => {
                     : "Enter a single case ID (numerals only). Enable batch processing to enter multiple IDs."}
                 </p>
 
-                {/* Batch Processing Checkbox */}
-                <div className="flex items-center gap-2 mb-3">
-                  <input
-                    type="checkbox"
-                    id="batchProcessing"
-                    checked={batchProcessing}
-                    onChange={(e) => setBatchProcessing(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="batchProcessing"
-                    className="text-sm text-gray-900 cursor-pointer"
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setBatchProcessing(false)}
+                    disabled={loading}
+                    className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                      !batchProcessing
+                        ? "bg-gray-100 text-gray-900 border-gray-400"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                    }`}
                   >
-                    Enable batch processing
-                  </label>
+                    Single
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBatchProcessing(true)}
+                    disabled={loading}
+                    className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                      batchProcessing
+                        ? "bg-gray-100 text-gray-900 border-gray-400"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    Batch
+                  </button>
                 </div>
 
                 {batchProcessing ? (
                   <textarea
+                    ref={caseInputRef}
                     value={caseInput}
                     onChange={handleInputChange}
                     placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
@@ -568,9 +611,11 @@ const GenericCaseStatusUpdate = () => {
                   />
                 ) : (
                   <input
+                    ref={caseInputRef}
                     type="text"
                     value={caseInput}
                     onChange={handleInputChange}
+                    onKeyDown={handleSingleCaseInputKeyDown}
                     placeholder="Enter case ID here"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                   />
