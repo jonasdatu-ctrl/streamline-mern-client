@@ -38,7 +38,6 @@ const CaseStatusUpdate = () => {
   const [copiedSection, setCopiedSection] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [todayDate] = useState(new Date().toLocaleDateString());
   const caseInputRef = useRef(null);
 
   const getFilteredStatuses = () => {
@@ -650,12 +649,6 @@ const CaseStatusUpdate = () => {
 
               {/* Stats */}
               <div className="rounded-lg border border-gray-400 p-3">
-                <p className="text-xs text-gray-500 mb-1">
-                  <span className="font-semibold text-gray-900">
-                    Today's Date:
-                  </span>{" "}
-                  {todayDate}
-                </p>
                 <div className="text-xs text-gray-600">
                   <p>Total IDs: {totalCaseIds}</p>
                   <p>Processed: {totalProcessed}</p>
