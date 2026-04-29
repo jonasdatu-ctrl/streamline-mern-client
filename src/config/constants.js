@@ -10,7 +10,7 @@ export const ROUTES = {
   HOME: "/",
   DASHBOARD: "/dashboard",
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
-  GENERIC_CASE_STATUS_UPDATE: "/dashboard/generic-case-status-update",
+  CASE_STATUS_UPDATE: "/dashboard/case-status-update",
   CASES_SHIPPED_TO_CUSTOMER: "/dashboard/cases-shipped-to-customer",
   RUSH_CASES_REPORT: "/dashboard/reports/rush-cases",
 };
@@ -52,9 +52,9 @@ export const NAV_ITEMS = [
         route: ROUTES.SHOPIFY_CASES_RECEIVED,
       },
       {
-        label: "Generic Case Status Update",
-        key: "generic-case-status-update",
-        route: ROUTES.GENERIC_CASE_STATUS_UPDATE,
+        label: "Case Status Update",
+        key: "case-status-update",
+        route: ROUTES.CASE_STATUS_UPDATE,
       },
       {
         label: "Cases Shipped to Customer",
