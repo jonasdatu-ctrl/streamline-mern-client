@@ -308,11 +308,13 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
               {currentUser && (
                 <div className="text-xs space-y-0.5">
                   <p className="text-gray-300 font-medium truncate">
+                    Logged-in user:
                     {currentUser.UserName ||
                       currentUser.displayName ||
                       currentUser.email}
                   </p>
                   <p className="text-gray-300">
+                    Date:
                     {new Date().toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",

@@ -648,31 +648,28 @@ const CasesShippedToCustomer = () => {
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
                 User Stats
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
-                <div>
-                  <p className="text-xs text-gray-500">Shipped by user today</p>
-                  <p className="font-semibold text-gray-900">
+              <div className="text-sm text-gray-700 overflow-x-auto">
+                <p className="whitespace-nowrap">
+                  <span className="text-gray-500">User today:</span>{" "}
+                  <span className="font-semibold text-gray-900">
                     {statsLoading ? "Loading..." : totalCaseShippedToday}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Shipped by user this week</p>
-                  <p className="font-semibold text-gray-900">
+                  </span>
+                  <span className="mx-2 text-gray-400">|</span>
+                  <span className="text-gray-500">User week:</span>{" "}
+                  <span className="font-semibold text-gray-900">
                     {statsLoading ? "Loading..." : totalCaseShippedThisWeek}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">All users today</p>
-                  <p className="font-semibold text-gray-900">
+                  </span>
+                  <span className="mx-2 text-gray-400">|</span>
+                  <span className="text-gray-500">All today:</span>{" "}
+                  <span className="font-semibold text-gray-900">
                     {statsLoading ? "Loading..." : totalCaseShippedAllUsersToday}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">All users this week</p>
-                  <p className="font-semibold text-gray-900">
+                  </span>
+                  <span className="mx-2 text-gray-400">|</span>
+                  <span className="text-gray-500">All week:</span>{" "}
+                  <span className="font-semibold text-gray-900">
                     {statsLoading ? "Loading..." : totalCaseShippedAllUsersThisWeek}
-                  </p>
-                </div>
+                  </span>
+                </p>
               </div>
             </div>
           </div>

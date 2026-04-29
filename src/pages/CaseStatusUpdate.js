@@ -427,7 +427,7 @@ const CaseStatusUpdate = () => {
       <div className="space-y-6">
         {/* Header Section */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Case Status Update
@@ -435,21 +435,6 @@ const CaseStatusUpdate = () => {
               <p className="text-gray-600">
                 Enter case IDs to update their statuses
               </p>
-            </div>
-            <div className="w-full lg:w-auto lg:min-w-[280px] bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
-                Page Stats
-              </p>
-              <div className="grid grid-cols-2 gap-x-6 text-sm text-gray-700">
-                <div>
-                  <p className="text-xs text-gray-500">Total IDs</p>
-                  <p className="font-semibold text-gray-900">{totalCaseIds}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Processed</p>
-                  <p className="font-semibold text-gray-900">{totalProcessed}</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -662,6 +647,13 @@ const CaseStatusUpdate = () => {
                 </div>
               )}
 
+              {/* Stats */}
+              <div className="rounded-lg border border-gray-400 p-3">
+                <div className="text-xs text-gray-600">
+                  <p>Total IDs: {totalCaseIds}</p>
+                  <p>Processed: {totalProcessed}</p>
+                </div>
+              </div>
             </div>
           </div>
 
