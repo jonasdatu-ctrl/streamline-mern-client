@@ -1,6 +1,6 @@
-// src/pages/GenericCaseStatusUpdate.js
+// src/pages/CaseStatusUpdate.js
 /**
- * Generic Case Status Update Page Component
+ * Case Status Update Page Component
  *
  * Displays a page for updating case statuses.
  * - Status dropdown selector for choosing the status
@@ -16,10 +16,10 @@ import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
 /**
- * Generic Case Status Update page component
+ * Case Status Update page component
  * Shows interface for updating case statuses
  */
-const GenericCaseStatusUpdate = () => {
+const CaseStatusUpdate = () => {
   const [statuses, setStatuses] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -424,14 +424,14 @@ const GenericCaseStatusUpdate = () => {
   );
 
   return (
-    <Layout showLogout={true} title="Generic Case Status Update">
+    <Layout showLogout={true} title="Case Status Update">
       <div className="space-y-6">
         {/* Header Section */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Generic Case Status Update
+                Case Status Update
               </h1>
               <p className="text-gray-600">
                 Enter case IDs to update their statuses
@@ -898,4 +898,4 @@ const GenericCaseStatusUpdate = () => {
   );
 };
 
-export default GenericCaseStatusUpdate;
+export default CaseStatusUpdate;

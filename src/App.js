@@ -13,7 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ShopifyCasesReceived from "./pages/ShopifyCasesReceived";
-import GenericCaseStatusUpdate from "./pages/GenericCaseStatusUpdate";
+import CaseStatusUpdate from "./pages/CaseStatusUpdate";
 import CasesShippedToCustomer from "./pages/CasesShippedToCustomer";
 import RushCasesReport from "./pages/RushCasesReport";
 import { ROUTES } from "./config/constants";
@@ -56,10 +56,10 @@ function App() {
               }
             />
             <Route
-              path={ROUTES.GENERIC_CASE_STATUS_UPDATE}
+              path={ROUTES.CASE_STATUS_UPDATE}
               element={
                 <ProtectedRoute>
-                  <GenericCaseStatusUpdate />
+                  <CaseStatusUpdate />
                 </ProtectedRoute>
               }
             />
