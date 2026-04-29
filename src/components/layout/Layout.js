@@ -312,7 +312,7 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
                       currentUser.displayName ||
                       currentUser.email}
                   </p>
-                  <p className="text-gray-500">
+                  <p className="text-gray-300">
                     {new Date().toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
