@@ -105,8 +105,6 @@ const CasesShippedToCustomer = () => {
   const trackingNumberInputRef = useRef(null);
   const caseInputRef = useRef(null);
 
-  const todayDate = useMemo(() => new Date().toLocaleDateString(), []);
-
   const selectedCarrier = useMemo(
     () =>
       carriers.find((carrier) => String(carrier.ID) === selectedCarrierId) ||
@@ -736,12 +734,6 @@ const CasesShippedToCustomer = () => {
 
               {/* Stats */}
               <div className="rounded-lg border border-gray-400 p-3">
-                <p className="text-xs text-gray-500 mb-1">
-                  <span className="font-semibold text-gray-900">
-                    Today's Date:
-                  </span>{" "}
-                  {todayDate}
-                </p>
               </div>
 
               <div className="bg-white shadow-sm rounded-lg p-3 border border-gray-400">
