@@ -12,6 +12,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../config/firebase";
 import { NAV_ITEMS, MESSAGES, ROUTES } from "../../config/constants";
+import { useAuth } from "../../contexts/AuthContext";
 import Button from "../common/Button";
 
 /**
@@ -24,6 +25,7 @@ import Button from "../common/Button";
 const Layout = ({ children, showLogout = false, title = "" }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({
     "transaction-manager": true,
@@ -300,9 +302,26 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
             })}
           </nav>
 
-          {/* Logout Button */}
+          {/* User Info + Logout */}
           {showLogout && (
-            <div className="p-4 border-t border-gray-700">
+            <div className="p-4 border-t border-gray-700 space-y-3">
+              {currentUser && (
+                <div className="text-xs space-y-0.5">
+                  <p className="text-gray-300 font-medium truncate">
+                    {currentUser.UserName ||
+                      currentUser.displayName ||
+                      currentUser.email}
+                  </p>
+                  <p className="text-gray-500">
+                    {new Date().toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              )}
               <Button
                 variant="danger"
                 size="sm"

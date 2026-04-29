@@ -7,7 +7,6 @@
  */
 
 import React from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { MESSAGES } from "../config/constants";
 import Layout from "../components/layout/Layout";
 
@@ -16,8 +15,6 @@ import Layout from "../components/layout/Layout";
  * Shows the main admin interface with navigation and welcome content
  */
 const Dashboard = () => {
-  const { currentUser } = useAuth();
-
   return (
     <Layout showLogout={true} title={MESSAGES.DASHBOARD_TITLE}>
       <div className="space-y-8">
@@ -27,21 +24,6 @@ const Dashboard = () => {
             Welcome to your Dashboard
           </h1>
           <p className="text-gray-600 mb-6">{MESSAGES.WELCOME_MESSAGE}</p>
-
-          {/* User Info */}
-          {currentUser && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h2 className="text-lg font-semibold text-blue-900 mb-2">
-                Welcome back!
-              </h2>
-              <p className="text-blue-700">
-                Logged in as:{" "}
-                <span className="font-medium">
-                  {currentUser.displayName || currentUser.email}
-                </span>
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Quick Actions / Stats Cards */}

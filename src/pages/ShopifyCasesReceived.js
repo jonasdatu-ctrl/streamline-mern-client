@@ -10,7 +10,6 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -19,7 +18,6 @@ import { apiGet, apiPost } from "../utils/api";
  * Shows interface for processing new Shopify cases
  */
 const ShopifyCasesReceived = () => {
-  const { currentUser } = useAuth();
   const [caseInput, setCaseInput] = useState("");
   const [processingCases, setProcessingCases] = useState([]);
   const [existingCases, setExistingCases] = useState([]);
@@ -28,7 +26,6 @@ const ShopifyCasesReceived = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [todayDate] = useState(new Date().toLocaleDateString());
-  const [statsUserName, setStatsUserName] = useState("");
   const [totalCaseReceivedToday, setTotalCaseReceivedToday] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -40,7 +37,7 @@ const ShopifyCasesReceived = () => {
       if (response.status === "success") {
         setTotalCaseReceivedToday(response.data?.totalCaseReceivedToday || 0);
         if (response.data?.userName) {
-          setStatsUserName(response.data.userName);
+          // userName is now shown in the navigation sidebar
         }
       }
     } catch (statsError) {
@@ -51,14 +48,8 @@ const ShopifyCasesReceived = () => {
   }, []);
 
   useEffect(() => {
-    setStatsUserName(
-      currentUser?.UserName ||
-        currentUser?.displayName ||
-        currentUser?.email ||
-        "N/A",
-    );
     fetchUserStats();
-  }, [currentUser, fetchUserStats]);
+  }, [fetchUserStats]);
 
   /**
    * Parse input to extract case IDs (one per line, numerals only)
@@ -386,12 +377,6 @@ const ShopifyCasesReceived = () => {
                   </label>
 
                   <div className="space-y-2 text-sm text-gray-700">
-                    <p className="text-xs text-gray-500 mb-1">
-                      <span className="font-semibold text-gray-900">
-                        Logged-in user:
-                      </span>{" "}
-                      {statsUserName}
-                    </p>
                     <p className="text-xs text-gray-500 mb-1">
                       <span className="font-semibold text-gray-900">
                         Cases received by user today:
