@@ -682,7 +682,7 @@ const CasesShippedToCustomer = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <div className="sticky top-0 bg-white shadow-sm rounded-lg border border-gray-400 p-6 space-y-4 z-10">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -765,107 +765,8 @@ const CasesShippedToCustomer = () => {
                 </button>
               </div>
 
-            </div>
-          </div>
-
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
-              <div className="bg-green-50 border-b border-green-200 px-6 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Valid Cases
-                  </h2>
-                  <span className="text-sm font-medium text-green-700">
-                    Count: {validCases.length}
-                  </span>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border-b border-gray-400">
-                <table className="min-w-full divide-y divide-gray-200">
-                  {validCases.length > 0 && (
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Case ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Customer Name
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Case Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Received Date
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Status Update
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Rush
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                  )}
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {validCases.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-4 py-6 text-sm text-gray-500 text-center"
-                        >
-                          No valid cases yet.
-                        </td>
-                      </tr>
-                    )}
-                    {validCases.map((item) => (
-                      <tr key={item.caseId}>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.customerName || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.caseStatus || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                          {formatDisplayDate(item.receivedDate)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                          {formatDisplayDate(item.lastStatusUpdate)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.isRush ? (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                              Yes
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                              No
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteValidCase(item.caseId)}
-                            className="text-xs px-2 py-1 rounded bg-white border border-green-200 hover:bg-green-50"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="p-6 border-t border-gray-400">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="rounded-lg border border-gray-300 p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">
                       Carrier ID
@@ -927,13 +828,13 @@ const CasesShippedToCustomer = () => {
                 </div>
 
                 {trackingWarning && (
-                  <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {trackingWarning}
                   </div>
                 )}
 
                 {checkingTrackingNumber && trackingNumber.trim() && (
-                  <div className="mb-4 text-xs text-gray-500">
+                  <div className="text-xs text-gray-500">
                     Checking tracking number...
                   </div>
                 )}
@@ -949,8 +850,184 @@ const CasesShippedToCustomer = () => {
                   </button>
                 </div>
               </div>
+
             </div>
 
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
+                <div className="bg-green-50 border-b border-green-200 px-6 py-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Valid Cases
+                    </h2>
+                    <span className="text-sm font-medium text-green-700">
+                      Count: {validCases.length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border-b border-gray-400">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    {validCases.length > 0 && (
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Case ID
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Customer Name
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Case Status
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Received Date
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Last Status Update
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Rush
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                    )}
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {validCases.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="px-4 py-6 text-sm text-gray-500 text-center"
+                          >
+                            No valid cases yet.
+                          </td>
+                        </tr>
+                      )}
+                      {validCases.map((item) => (
+                        <tr key={item.caseId}>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {item.caseId}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.customerName || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.caseStatus || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                            {formatDisplayDate(item.receivedDate)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                            {formatDisplayDate(item.lastStatusUpdate)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.isRush ? (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                Yes
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                No
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteValidCase(item.caseId)}
+                              className="text-xs px-2 py-1 rounded bg-white border border-green-200 hover:bg-green-50"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
+                <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Invalid Cases
+                    </h2>
+                    <span className="text-sm font-medium text-red-700">
+                      Count: {invalidCases.length}
+                    </span>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    {invalidCases.length > 0 && (
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Case ID
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Case Status
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Reason
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Details
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                    )}
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {invalidCases.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-4 py-6 text-sm text-gray-500 text-center"
+                          >
+                            No invalid cases.
+                          </td>
+                        </tr>
+                      )}
+                      {invalidCases.map((item, index) => (
+                        <tr key={`${item.caseId}-${index}`}>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {item.caseId}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.caseStatus || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-red-700">
+                            {item.reason}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.details || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteInvalidCase(item.caseId)}
+                              className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-1 space-y-6">
             <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-sky-50 border-b border-sky-200 px-6 py-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1047,81 +1124,6 @@ const CasesShippedToCustomer = () => {
                 >
                   Print Manifest
                 </button>
-              </div>
-            </div>
-
-            <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
-              <div className="bg-red-50 border-b border-red-200 px-6 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Invalid Cases
-                  </h2>
-                  <span className="text-sm font-medium text-red-700">
-                    Count: {invalidCases.length}
-                  </span>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  {invalidCases.length > 0 && (
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Case ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Case Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Reason
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Details
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                  )}
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {invalidCases.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="px-4 py-6 text-sm text-gray-500 text-center"
-                        >
-                          No invalid cases.
-                        </td>
-                      </tr>
-                    )}
-                    {invalidCases.map((item, index) => (
-                      <tr key={`${item.caseId}-${index}`}>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.caseStatus || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-red-700">
-                          {item.reason}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.details || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteInvalidCase(item.caseId)}
-                            className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </div>
           </div>
