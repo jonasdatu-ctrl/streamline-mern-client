@@ -808,8 +808,8 @@ const CasesShippedToCustomer = () => {
               </div>
 
               <div className="rounded-lg border border-gray-300 p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="hidden">
                     <label className="block text-sm font-semibold text-gray-900 mb-2">
                       Carrier ID
                     </label>
@@ -827,7 +827,7 @@ const CasesShippedToCustomer = () => {
                     </select>
                   </div>
 
-                  <div>
+                  <div className="hidden">
                     <label className="block text-sm font-semibold text-gray-900 mb-2">
                       Barcode
                     </label>
