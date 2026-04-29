@@ -24,6 +24,9 @@ const BARCODE_LENGTH_22 = 22;
 const BARCODE_LENGTH_32 = 32;
 const BARCODE_LENGTH_34 = 34;
 const BARCODE_ERROR_MESSAGE = "Invalid barcode. Please rescan.";
+const CARRIER_ID_FEDEX_PAK = "95";
+const CARRIER_ID_USPS_POSTAL_SERVICE = "16";
+const CARRIER_ID_UPS_DEFAULT_2 = "48";
 
 const parseBarcodeToTracking = (barcode) => {
   const trimmed = String(barcode || "").trim();
@@ -46,6 +49,31 @@ const parseBarcodeToTracking = (barcode) => {
 const buildGeneratedTrackingNumber = (carrierId) => {
   const now = new Date();
   return `${carrierId}-${now.getFullYear()}${now.getMonth() + 1}${now.getDate()}-${Math.floor(Math.random() * 1000) + 1}`;
+};
+
+const detectCarrierIdFromTrackingNumber = (trackingNumber) => {
+  const normalizedTracking = String(trackingNumber || "").trim();
+
+  if (!normalizedTracking) {
+    return null;
+  }
+
+  if (/^1Z/.test(normalizedTracking.toUpperCase())) {
+    return CARRIER_ID_UPS_DEFAULT_2;
+  }
+
+  if (/^(420|92|93|94|95)/.test(normalizedTracking)) {
+    return CARRIER_ID_USPS_POSTAL_SERVICE;
+  }
+
+  if (
+    /^(96|97|98|99|7\d{11}|12\d{10}|15\d{10})/.test(normalizedTracking) ||
+    /^[19]\d{33}$/.test(normalizedTracking)
+  ) {
+    return CARRIER_ID_FEDEX_PAK;
+  }
+
+  return null;
 };
 
 const parseCaseIds = (input) => {
@@ -275,6 +303,16 @@ const CasesShippedToCustomer = () => {
 
     return () => clearTimeout(timeoutId);
   }, [trackingNumber]);
+
+  useEffect(() => {
+    const detectedCarrierId = detectCarrierIdFromTrackingNumber(trackingNumber);
+
+    if (!detectedCarrierId || detectedCarrierId === selectedCarrierId) {
+      return;
+    }
+
+    setSelectedCarrierId(detectedCarrierId);
+  }, [trackingNumber, selectedCarrierId]);
 
   const handleValidateCases = async (inputOverride) => {
     const focusTrackingNumberField = () => {
@@ -662,12 +700,16 @@ const CasesShippedToCustomer = () => {
                   <span className="mx-2 text-gray-400">|</span>
                   <span className="text-gray-500">All today:</span>{" "}
                   <span className="font-semibold text-gray-900">
-                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersToday}
+                    {statsLoading
+                      ? "Loading..."
+                      : totalCaseShippedAllUsersToday}
                   </span>
                   <span className="mx-2 text-gray-400">|</span>
                   <span className="text-gray-500">All week:</span>{" "}
                   <span className="font-semibold text-gray-900">
-                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersThisWeek}
+                    {statsLoading
+                      ? "Loading..."
+                      : totalCaseShippedAllUsersThisWeek}
                   </span>
                 </p>
               </div>
@@ -850,7 +892,6 @@ const CasesShippedToCustomer = () => {
                   </button>
                 </div>
               </div>
-
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -1012,7 +1053,9 @@ const CasesShippedToCustomer = () => {
                           <td className="px-4 py-3 text-right">
                             <button
                               type="button"
-                              onClick={() => handleDeleteInvalidCase(item.caseId)}
+                              onClick={() =>
+                                handleDeleteInvalidCase(item.caseId)
+                              }
                               className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
                             >
                               Remove
