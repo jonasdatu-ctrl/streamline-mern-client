@@ -302,12 +302,23 @@ const ShopifyCasesReceived = () => {
       <div className="space-y-6">
         {/* Header Section */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 New Shopify Cases Received - "A" Cases
               </h1>
               <p className="text-gray-600">Receive case IDs from Shopify</p>
+            </div>
+            <div className="w-full lg:w-auto lg:min-w-[300px] bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                User Stats
+              </p>
+              <div>
+                <p className="text-xs text-gray-500">Cases received by user today</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {statsLoading ? "Loading..." : totalCaseReceivedToday}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -362,20 +373,6 @@ const ShopifyCasesReceived = () => {
                   <div className="text-xs text-gray-600">
                     <p>Total IDs: {totalCaseIds}</p>
                     <p>Processed: {totalProcessed}</p>
-                  </div>
-                </div>
-                <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-3">
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
-                    User Stats
-                  </label>
-
-                  <div className="space-y-2 text-sm text-gray-700">
-                    <p className="text-xs text-gray-500 mb-1">
-                      <span className="font-semibold text-gray-900">
-                        Cases received by user today:
-                      </span>{" "}
-                      {statsLoading ? "Loading..." : totalCaseReceivedToday}
-                    </p>
                   </div>
                 </div>
               </div>

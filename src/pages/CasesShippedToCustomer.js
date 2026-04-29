@@ -634,12 +634,48 @@ const CasesShippedToCustomer = () => {
     <Layout showLogout={true} title="Cases Shipped to Customer">
       <div className="space-y-6">
         <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Cases Shipped to Customer
-          </h1>
-          <p className="text-gray-600">
-            Validate cases, assign shipping details, and ship in batch.
-          </p>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Cases Shipped to Customer
+              </h1>
+              <p className="text-gray-600">
+                Validate cases, assign shipping details, and ship in batch.
+              </p>
+            </div>
+
+            <div className="w-full lg:w-auto lg:min-w-[360px] bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                User Stats
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
+                <div>
+                  <p className="text-xs text-gray-500">Shipped by user today</p>
+                  <p className="font-semibold text-gray-900">
+                    {statsLoading ? "Loading..." : totalCaseShippedToday}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Shipped by user this week</p>
+                  <p className="font-semibold text-gray-900">
+                    {statsLoading ? "Loading..." : totalCaseShippedThisWeek}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">All users today</p>
+                  <p className="font-semibold text-gray-900">
+                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersToday}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">All users this week</p>
+                  <p className="font-semibold text-gray-900">
+                    {statsLoading ? "Loading..." : totalCaseShippedAllUsersThisWeek}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -732,43 +768,6 @@ const CasesShippedToCustomer = () => {
                 </button>
               </div>
 
-              {/* Stats */}
-              <div className="bg-white shadow-sm rounded-lg p-3 border border-gray-400">
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
-                  User Stats
-                </label>
-
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      Cases shipped by user today:
-                    </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseShippedToday}
-                  </p>
-                  <p className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      Cases shipped by user this week:
-                    </span>{" "}
-                    {statsLoading ? "Loading..." : totalCaseShippedThisWeek}
-                  </p>
-                  <p className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      Cases shipped by ALL users today:
-                    </span>{" "}
-                    {statsLoading
-                      ? "Loading..."
-                      : totalCaseShippedAllUsersToday}
-                  </p>
-                  <p className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      Cases shipped by ALL users this week:
-                    </span>{" "}
-                    {statsLoading
-                      ? "Loading..."
-                      : totalCaseShippedAllUsersThisWeek}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 
