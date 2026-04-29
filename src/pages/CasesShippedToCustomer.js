@@ -137,7 +137,6 @@ const CasesShippedToCustomer = () => {
         if (response.data?.userName) {
           // userName is now shown in the navigation sidebar
         }
-        }
       }
     } catch (statsError) {
       console.error("Error fetching user stats:", statsError);
