@@ -390,6 +390,14 @@ const CaseStatusUpdate = () => {
   const renderResultStatus = (value) => {
     const normalized = String(value || "na").toLowerCase();
 
+    if (normalized === "pending") {
+      return (
+        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+          Pending
+        </span>
+      );
+    }
+
     if (normalized === "check") {
       return (
         <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
