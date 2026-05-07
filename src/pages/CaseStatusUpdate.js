@@ -177,9 +177,12 @@ const CaseStatusUpdate = () => {
 
     setLoading(true);
     setError(null);
-    setProcessingCases([]);
-    setSuccessfulCases([]);
-    setNotFoundCases([]);
+
+    if (batchProcessing) {
+      setProcessingCases([]);
+      setSuccessfulCases([]);
+      setNotFoundCases([]);
+    }
 
     try {
       // Process each case ID sequentially

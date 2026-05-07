@@ -9,7 +9,7 @@
  * - Display existing cases found in database
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -19,6 +19,7 @@ import { apiGet, apiPost } from "../utils/api";
  */
 const ShopifyCasesReceived = () => {
   const [caseInput, setCaseInput] = useState("");
+  const [batchProcessing, setBatchProcessing] = useState(false);
   const [processingCases, setProcessingCases] = useState([]);
   const [existingCases, setExistingCases] = useState([]);
   const [invalidCases, setInvalidCases] = useState([]);
@@ -27,6 +28,7 @@ const ShopifyCasesReceived = () => {
   const [error, setError] = useState(null);
   const [totalCaseReceivedToday, setTotalCaseReceivedToday] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
+  const caseInputRef = useRef(null);
 
   const fetchUserStats = useCallback(async () => {
     try {
@@ -64,20 +66,30 @@ const ShopifyCasesReceived = () => {
   /**
    * Process all case IDs one by one
    */
-  const handleProcess = async () => {
-    const caseIds = parseCaseIds(caseInput);
+  const handleProcess = async (inputOverride) => {
+    const resolvedInput =
+      typeof inputOverride === "string" ? inputOverride : caseInput;
+    const caseIds = parseCaseIds(resolvedInput);
 
     if (caseIds.length === 0) {
       setError("Please enter valid case IDs (numerals only)");
       return;
     }
 
+    if (!batchProcessing && caseIds.length > 1) {
+      setError("Batch processing is disabled. Only one case ID allowed.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    setProcessingCases([]);
-    setExistingCases([]);
-    setInvalidCases([]);
-    setSuccessfulCases([]);
+
+    if (batchProcessing) {
+      setProcessingCases([]);
+      setExistingCases([]);
+      setInvalidCases([]);
+      setSuccessfulCases([]);
+    }
 
     try {
       // Process each case ID sequentially
@@ -265,7 +277,38 @@ const ShopifyCasesReceived = () => {
     } finally {
       await fetchUserStats();
       setLoading(false);
+
+      if (!batchProcessing) {
+        setCaseInput("");
+        setTimeout(() => {
+          caseInputRef.current?.focus();
+          caseInputRef.current?.select();
+        }, 0);
+      }
     }
+  };
+
+  const handleSingleCaseInputKeyDown = (event) => {
+    if (batchProcessing || event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (loading) {
+      return;
+    }
+
+    const normalizedCaseId = String(event.currentTarget.value || "")
+      .replace(/\D/g, "")
+      .trim();
+
+    if (!normalizedCaseId) {
+      return;
+    }
+
+    setCaseInput(normalizedCaseId);
+    handleProcess(normalizedCaseId);
   };
 
   /**
@@ -273,6 +316,7 @@ const ShopifyCasesReceived = () => {
    */
   const handleClear = () => {
     setCaseInput("");
+    setBatchProcessing(false);
     setProcessingCases([]);
     setExistingCases([]);
     setInvalidCases([]);
@@ -287,6 +331,11 @@ const ShopifyCasesReceived = () => {
     let value = e.target.value;
     // Allow digits and newlines only
     value = value.replace(/[^\d\n]/g, "");
+
+    if (!batchProcessing) {
+      value = value.replace(/\n/g, "");
+    }
+
     setCaseInput(value);
   };
 
@@ -336,15 +385,57 @@ const ShopifyCasesReceived = () => {
                     Case ID Input
                   </label>
                   <p className="text-xs text-gray-500 mb-3">
-                    Enter case IDs (numerals only). One per line. Barcode scans
-                    automatically add newlines.
+                    {batchProcessing
+                      ? "Enter case IDs (numerals only). One per line. Barcode scans automatically add newlines."
+                      : "Enter a single case ID (numerals only). Enable batch processing to enter multiple IDs."}
                   </p>
-                  <textarea
-                    value={caseInput}
-                    onChange={handleInputChange}
-                    placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
-                    className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
-                  />
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setBatchProcessing(false)}
+                      disabled={loading}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                        !batchProcessing
+                          ? "bg-gray-100 text-gray-900 border-gray-400"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      Single
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBatchProcessing(true)}
+                      disabled={loading}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors disabled:cursor-not-allowed ${
+                        batchProcessing
+                          ? "bg-gray-100 text-gray-900 border-gray-400"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      Batch
+                    </button>
+                  </div>
+
+                  {batchProcessing ? (
+                    <textarea
+                      ref={caseInputRef}
+                      value={caseInput}
+                      onChange={handleInputChange}
+                      placeholder="Enter case IDs here&#10;123456&#10;789012&#10;..."
+                      className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+                    />
+                  ) : (
+                    <input
+                      ref={caseInputRef}
+                      type="text"
+                      value={caseInput}
+                      onChange={handleInputChange}
+                      onKeyDown={handleSingleCaseInputKeyDown}
+                      placeholder="Enter case ID here"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    />
+                  )}
                 </div>
 
                 <div className="flex gap-2">
