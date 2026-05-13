@@ -27,6 +27,14 @@ const BARCODE_ERROR_MESSAGE = "Invalid barcode. Please rescan.";
 const CARRIER_ID_FEDEX_PAK = "95";
 const CARRIER_ID_USPS_POSTAL_SERVICE = "16";
 const CARRIER_ID_UPS_DEFAULT_2 = "48";
+const CSV_CASE_ID_HEADERS = ["caseid", "case_id", "orderid", "order_id"];
+const CSV_TRACKING_HEADERS = [
+  "tracking",
+  "trackingnumber",
+  "tracking_number",
+  "trackingid",
+  "tracking_id",
+];
 
 const parseBarcodeToTracking = (barcode) => {
   const trimmed = String(barcode || "").trim();
@@ -81,6 +89,121 @@ const parseCaseIds = (input) => {
   return matches ? matches.map((id) => id.trim()).filter(Boolean) : [];
 };
 
+const normalizeCsvHeader = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const parseCsvRows = (csvText) => {
+  const text = String(csvText || "");
+  const rows = [];
+  let currentField = "";
+  let currentRow = [];
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    const nextCharacter = text[index + 1];
+
+    if (character === '"') {
+      if (inQuotes && nextCharacter === '"') {
+        currentField += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (!inQuotes && character === ",") {
+      currentRow.push(currentField);
+      currentField = "";
+      continue;
+    }
+
+    if (!inQuotes && (character === "\n" || character === "\r")) {
+      if (character === "\r" && nextCharacter === "\n") {
+        index += 1;
+      }
+      currentRow.push(currentField);
+      rows.push(currentRow);
+      currentRow = [];
+      currentField = "";
+      continue;
+    }
+
+    currentField += character;
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField);
+    rows.push(currentRow);
+  }
+
+  return rows;
+};
+
+const extractCaseTrackingFromCsv = (csvText) => {
+  const rows = parseCsvRows(csvText).filter(
+    (row) => Array.isArray(row) && row.some((value) => String(value || "").trim()),
+  );
+
+  if (rows.length < 2) {
+    return {
+      caseIds: [],
+      trackingByCaseId: {},
+      totalDataRows: 0,
+      skippedRows: 0,
+    };
+  }
+
+  const headerRow = rows[0].map((header) => normalizeCsvHeader(header));
+  const caseIdIndex = headerRow.findIndex((header) =>
+    CSV_CASE_ID_HEADERS.includes(header),
+  );
+  const trackingIndex = headerRow.findIndex((header) =>
+    CSV_TRACKING_HEADERS.includes(header),
+  );
+
+  if (caseIdIndex === -1 || trackingIndex === -1) {
+    throw new Error(
+      "CSV must include a Case/Order ID column and a Tracking column",
+    );
+  }
+
+  const trackingByCaseId = {};
+  const orderedCaseIds = [];
+  const seenCaseIds = new Set();
+  let skippedRows = 0;
+
+  for (let rowIndex = 1; rowIndex < rows.length; rowIndex += 1) {
+    const row = rows[rowIndex];
+    const rawCaseId = String(row[caseIdIndex] || "").trim();
+    const rawTracking = String(row[trackingIndex] || "").trim();
+    const normalizedCaseId = rawCaseId.replace(/\D/g, "");
+    const invalidTrackingValue = /^#?N\/?A$/i.test(rawTracking);
+
+    if (!normalizedCaseId || !rawTracking || invalidTrackingValue) {
+      skippedRows += 1;
+      continue;
+    }
+
+    trackingByCaseId[normalizedCaseId] = rawTracking;
+    if (!seenCaseIds.has(normalizedCaseId)) {
+      seenCaseIds.add(normalizedCaseId);
+      orderedCaseIds.push(normalizedCaseId);
+    }
+  }
+
+  return {
+    caseIds: orderedCaseIds,
+    trackingByCaseId,
+    totalDataRows: rows.length - 1,
+    skippedRows,
+  };
+};
+
 const formatDisplayDate = (value) => {
   if (!value) {
     return "-";
@@ -120,6 +243,9 @@ const CasesShippedToCustomer = () => {
   const [error, setError] = useState("");
   const [trackingWarning, setTrackingWarning] = useState("");
   const [checkingTrackingNumber, setCheckingTrackingNumber] = useState(false);
+  const [csvMode, setCsvMode] = useState(false);
+  const [csvFileName, setCsvFileName] = useState("");
+  const [caseTrackingByCaseId, setCaseTrackingByCaseId] = useState({});
 
   const [totalCaseShippedToday, setTotalCaseShippedToday] = useState(0);
   const [totalCaseShippedThisWeek, setTotalCaseShippedThisWeek] = useState(0);
@@ -132,6 +258,7 @@ const CasesShippedToCustomer = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const trackingNumberInputRef = useRef(null);
   const caseInputRef = useRef(null);
+  const csvUploadInputRef = useRef(null);
 
   const selectedCarrier = useMemo(
     () =>
@@ -267,6 +394,12 @@ const CasesShippedToCustomer = () => {
   };
 
   useEffect(() => {
+    if (csvMode) {
+      setTrackingWarning("");
+      setCheckingTrackingNumber(false);
+      return;
+    }
+
     const normalizedTracking = trackingNumber.trim();
 
     if (!normalizedTracking) {
@@ -302,7 +435,7 @@ const CasesShippedToCustomer = () => {
     }, 700);
 
     return () => clearTimeout(timeoutId);
-  }, [trackingNumber]);
+  }, [trackingNumber, csvMode]);
 
   useEffect(() => {
     const detectedCarrierId = detectCarrierIdFromTrackingNumber(trackingNumber);
@@ -477,8 +610,15 @@ const CasesShippedToCustomer = () => {
     setTrackingNumber("");
     setTrackingWarning("");
     setBarcodeValue("");
+    setCsvMode(false);
+    setCsvFileName("");
+    setCaseTrackingByCaseId({});
     setValidCases([]);
     setInvalidCases([]);
+
+    if (csvUploadInputRef.current) {
+      csvUploadInputRef.current.value = "";
+    }
   };
 
   const handleClearAll = () => {
@@ -583,8 +723,19 @@ const CasesShippedToCustomer = () => {
       return "Please enter at least one valid case ID";
     }
 
-    if (!numericCarrierId || numericCarrierId < 1) {
+    if (!csvMode && (!numericCarrierId || numericCarrierId < 1)) {
       return "Please select a carrier";
+    }
+
+    if (csvMode) {
+      const missingTrackingCaseIds = validCases
+        .map((item) => String(item.caseId || "").trim())
+        .filter((caseId) => !caseTrackingByCaseId[caseId]);
+
+      if (missingTrackingCaseIds.length > 0) {
+        return `Missing tracking number for case IDs: ${missingTrackingCaseIds.join(", ")}`;
+      }
+      return "";
     }
 
     if (!trackingNumber.trim()) {
@@ -592,6 +743,64 @@ const CasesShippedToCustomer = () => {
     }
 
     return "";
+  };
+
+  const handleCsvUploadClick = () => {
+    if (submitting || validatingCases) {
+      return;
+    }
+
+    csvUploadInputRef.current?.click();
+  };
+
+  const handleCsvFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const csvText = await file.text();
+      const parsed = extractCaseTrackingFromCsv(csvText);
+
+      if (parsed.caseIds.length === 0) {
+        setError(
+          "No valid Case/Order ID + Tracking rows found in the selected CSV",
+        );
+        setCsvMode(false);
+        setCsvFileName("");
+        setCaseTrackingByCaseId({});
+        return;
+      }
+
+      setCsvMode(true);
+      setCsvFileName(file.name);
+      setCaseTrackingByCaseId(parsed.trackingByCaseId);
+      setTrackingNumber("");
+      setTrackingWarning("");
+      setValidCases([]);
+      setInvalidCases([]);
+      setError("");
+
+      const importedCaseIdsAsText = parsed.caseIds.join("\n");
+      setCaseInput(importedCaseIdsAsText);
+      await handleValidateCases(importedCaseIdsAsText);
+
+      if (parsed.skippedRows > 0) {
+        setError(
+          `Imported ${parsed.caseIds.length} case IDs from ${file.name}. ${parsed.skippedRows} row(s) were skipped due to missing/invalid Case ID or Tracking values.`,
+        );
+      }
+    } catch (csvError) {
+      setCsvMode(false);
+      setCsvFileName("");
+      setCaseTrackingByCaseId({});
+      setError(csvError.message || "Failed to parse CSV file");
+    } finally {
+      if (event.target) {
+        event.target.value = "";
+      }
+    }
   };
 
   const submitShipment = async () => {
@@ -606,11 +815,21 @@ const CasesShippedToCustomer = () => {
 
     try {
       const validCaseIds = validCases.map((item) => item.caseId);
+      const normalizedCaseTrackingByCaseId = csvMode
+        ? validCaseIds.reduce((accumulator, caseId) => {
+            const normalizedCaseId = String(caseId || "").trim();
+            if (normalizedCaseId && caseTrackingByCaseId[normalizedCaseId]) {
+              accumulator[normalizedCaseId] = caseTrackingByCaseId[normalizedCaseId];
+            }
+            return accumulator;
+          }, {})
+        : undefined;
 
       const response = await apiPost("/shipping/shipped-to-customer", {
         carrierId: parseInt(selectedCarrierId, 10),
         carrierName: selectedCarrierName,
         trackingNumber: trackingNumber.trim(),
+        caseTrackingByCaseId: normalizedCaseTrackingByCaseId,
         caseIds: validCaseIds,
       });
 
@@ -623,7 +842,9 @@ const CasesShippedToCustomer = () => {
               "-",
             caseStatus: "Shipped to Customer",
             shippedDate: new Date().toISOString(),
-            trackingNumber: trackingNumber.trim(),
+            trackingNumber:
+              (csvMode && normalizedCaseTrackingByCaseId?.[String(caseId)]) ||
+              trackingNumber.trim(),
             carrierName: selectedCarrierName,
           }));
 
@@ -644,7 +865,10 @@ const CasesShippedToCustomer = () => {
             customerName: item.customerName || "-",
             caseStatus: item.caseStatus || "Shipped to Customer",
             shippedDate: item.shippedDate || new Date().toISOString(),
-            trackingNumber: item.trackingNumber || trackingNumber.trim(),
+            trackingNumber:
+              item.trackingNumber ||
+              (csvMode && normalizedCaseTrackingByCaseId?.[normalizedCaseId]) ||
+              trackingNumber.trim(),
             carrierName: item.carrierName || selectedCarrierName,
           });
           existingCaseIds.add(normalizedCaseId);
@@ -786,6 +1010,42 @@ const CasesShippedToCustomer = () => {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                   />
                 )}
+
+                <div>
+                  <input
+                    ref={csvUploadInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleCsvFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCsvUploadClick}
+                    disabled={submitting || validatingCases}
+                    className="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 16V4" />
+                      <path d="m7 9 5-5 5 5" />
+                      <path d="M4 20h16" />
+                    </svg>
+                    Upload CSV
+                  </button>
+                  {csvMode && csvFileName && (
+                    <p className="mt-2 text-xs text-emerald-700">
+                      Imported from {csvFileName}. Tracking is mapped per case ID.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -842,31 +1102,37 @@ const CasesShippedToCustomer = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                      Tracking Number
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        ref={trackingNumberInputRef}
-                        type="text"
-                        value={trackingNumber}
-                        onChange={(event) =>
-                          setTrackingNumber(event.target.value)
-                        }
-                        disabled={submitting}
-                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleGenerateTracking}
-                        disabled={!isCATN || submitting}
-                        className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-                      >
-                        Generate
-                      </button>
+                  {!csvMode ? (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Tracking Number
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          ref={trackingNumberInputRef}
+                          type="text"
+                          value={trackingNumber}
+                          onChange={(event) =>
+                            setTrackingNumber(event.target.value)
+                          }
+                          disabled={submitting}
+                          className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGenerateTracking}
+                          disabled={!isCATN || submitting}
+                          className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                        >
+                          Generate
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                      Tracking input is hidden because tracking numbers are loaded from CSV per case ID.
+                    </div>
+                  )}
                 </div>
 
                 {trackingWarning && (
