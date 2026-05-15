@@ -132,6 +132,20 @@ const parseCsvRecords = (content) => {
   return records;
 };
 
+const sanitizeCsvCell = (value) => {
+  return String(value || "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim();
+};
+
+const isDelimiterOnlyRow = (line) => {
+  const normalized = String(line || "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\s,"]+/g, "");
+
+  return normalized.length === 0;
+};
+
 const parseCsvContent = (content) => {
   const normalized = String(content || "").replace(/^\uFEFF/, "");
   if (!normalized) {
@@ -140,6 +154,7 @@ const parseCsvContent = (content) => {
 
   const lines = parseCsvRecords(normalized)
     .map((line) => String(line || "").trim())
+    .filter((line) => !isDelimiterOnlyRow(line))
     .filter((line) => line.length > 0);
 
   if (lines.length < 2) {
@@ -180,10 +195,10 @@ const parseCsvContent = (content) => {
       row[header] = values[headerIndex] || "";
     });
 
-    const shippedDate = String(row["Shipped Date"] || "").trim();
-    const employeeName = String(row["Employee Name"] || "").trim();
-    const orderId = String(row["Order ID"] || "").trim();
-    const trackingNumber = String(row.Tracking || "").trim();
+    const shippedDate = sanitizeCsvCell(row["Shipped Date"]);
+    const employeeName = sanitizeCsvCell(row["Employee Name"]);
+    const orderId = sanitizeCsvCell(row["Order ID"]);
+    const trackingNumber = sanitizeCsvCell(row.Tracking);
 
     const isCompletelyEmpty =
       !shippedDate && !employeeName && !orderId && !trackingNumber;
