@@ -93,19 +93,60 @@ const parseCsvLine = (line) => {
   return result;
 };
 
+const parseCsvRecords = (content) => {
+  const records = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < content.length; i += 1) {
+    const char = content[i];
+    const nextChar = content[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (!inQuotes && (char === "\n" || char === "\r")) {
+      records.push(current);
+      current = "";
+
+      if (char === "\r" && nextChar === "\n") {
+        i += 1;
+      }
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.length > 0) {
+    records.push(current);
+  }
+
+  return records;
+};
+
 const parseCsvContent = (content) => {
-  const normalized = String(content || "").replace(/^\uFEFF/, "").trim();
+  const normalized = String(content || "").replace(/^\uFEFF/, "");
   if (!normalized) {
     return { rows: [], error: "CSV file is empty" };
   }
 
-  const lines = normalized
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const lines = parseCsvRecords(normalized)
+    .map((line) => String(line || "").trim())
+    .filter((line) => line.length > 0);
 
   if (lines.length < 2) {
-    return { rows: [], error: "CSV must include a header row and at least one data row" };
+    return {
+      rows: [],
+      error: "CSV must include a header row and at least one data row",
+    };
   }
 
   const headers = parseCsvLine(lines[0]);
@@ -129,6 +170,8 @@ const parseCsvContent = (content) => {
 
   const rows = [];
 
+  let dataRowNumber = 2;
+
   for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
     const values = parseCsvLine(lines[lineIndex]);
     const row = {};
@@ -137,13 +180,35 @@ const parseCsvContent = (content) => {
       row[header] = values[headerIndex] || "";
     });
 
+    const shippedDate = String(row["Shipped Date"] || "").trim();
+    const employeeName = String(row["Employee Name"] || "").trim();
+    const orderId = String(row["Order ID"] || "").trim();
+    const trackingNumber = String(row.Tracking || "").trim();
+
+    const isCompletelyEmpty =
+      !shippedDate && !employeeName && !orderId && !trackingNumber;
+
+    if (isCompletelyEmpty) {
+      dataRowNumber += 1;
+      continue;
+    }
+
     rows.push({
-      rowNumber: lineIndex + 1,
-      shippedDate: String(row["Shipped Date"] || "").trim(),
-      employeeName: String(row["Employee Name"] || "").trim(),
-      orderId: String(row["Order ID"] || "").trim(),
-      trackingNumber: String(row.Tracking || "").trim(),
+      rowNumber: dataRowNumber,
+      shippedDate,
+      employeeName,
+      orderId,
+      trackingNumber,
     });
+
+    dataRowNumber += 1;
+  }
+
+  if (rows.length === 0) {
+    return {
+      rows: [],
+      error: "CSV contains no data rows after filtering empty rows",
+    };
   }
 
   return { rows, error: "" };
@@ -326,9 +391,8 @@ const CasesShippedToCustomerCsv = () => {
 
           if (result.valid) {
             const resolvedCarrierId = String(result.shipCarrierId || "").trim();
-            const inferredCarrierId = detectCarrierIdFromTrackingNumber(
-              trackingNumber,
-            );
+            const inferredCarrierId =
+              detectCarrierIdFromTrackingNumber(trackingNumber);
             const carrierId = resolvedCarrierId || inferredCarrierId || "0";
 
             if (!parseInt(carrierId, 10) || parseInt(carrierId, 10) < 1) {
@@ -379,7 +443,8 @@ const CasesShippedToCustomerCsv = () => {
                 caseStatus: result.caseStatus || "-",
                 reason: "Payment Default Carrier",
                 details:
-                  result.message || "Ship Carrier is set to Payment Default (59)",
+                  result.message ||
+                  "Ship Carrier is set to Payment Default (59)",
               });
             } else if (!result.invoiceApprovedForPayment) {
               nextInvalidCases.push({
@@ -423,7 +488,8 @@ const CasesShippedToCustomerCsv = () => {
           const message = String(err.message || "");
           const normalizedMessage = message.toLowerCase();
           const isNotFound = normalizedMessage.includes("not found");
-          const isPaymentDefault = normalizedMessage.includes("payment default");
+          const isPaymentDefault =
+            normalizedMessage.includes("payment default");
 
           nextInvalidCases.push({
             rowNumber: row.rowNumber,
@@ -513,7 +579,9 @@ const CasesShippedToCustomerCsv = () => {
 
     const printWindow = window.open("", "_blank", "width=1024,height=768");
     if (!printWindow) {
-      setError("Unable to open print window. Please allow popups and try again");
+      setError(
+        "Unable to open print window. Please allow popups and try again",
+      );
       return;
     }
 
@@ -617,7 +685,10 @@ const CasesShippedToCustomerCsv = () => {
       const processedCasesCombined = [];
 
       for (const payload of groupedPayloads.values()) {
-        const response = await apiPost("/shipping/shipped-to-customer", payload);
+        const response = await apiPost(
+          "/shipping/shipped-to-customer",
+          payload,
+        );
 
         const processedCases = Array.isArray(response?.data?.processedCases)
           ? response.data.processedCases
@@ -640,7 +711,8 @@ const CasesShippedToCustomerCsv = () => {
 
           processedCasesCombined.push({
             caseId,
-            customerName: processedItem.customerName || rowMeta?.customerName || "-",
+            customerName:
+              processedItem.customerName || rowMeta?.customerName || "-",
             caseStatus: processedItem.caseStatus || "Shipped to Customer",
             shippedDate: rowMeta?.shippedDate || processedItem.shippedDate,
             trackingNumber:
@@ -648,14 +720,18 @@ const CasesShippedToCustomerCsv = () => {
               processedItem.trackingNumber ||
               payload.trackingNumber,
             carrierName:
-              processedItem.carrierName || rowMeta?.carrierName || payload.carrierName,
+              processedItem.carrierName ||
+              rowMeta?.carrierName ||
+              payload.carrierName,
             employeeName: rowMeta?.employeeName || "-",
           });
         });
       }
 
       setShippedCases((prev) => {
-        const existingCaseIds = new Set(prev.map((item) => String(item.caseId)));
+        const existingCaseIds = new Set(
+          prev.map((item) => String(item.caseId)),
+        );
         const merged = [...prev];
 
         processedCasesCombined.forEach((item) => {
@@ -742,8 +818,8 @@ const CasesShippedToCustomerCsv = () => {
                   Case ID Input
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Upload CSV with headers: Shipped Date, Employee Name, Order ID,
-                  Tracking.
+                  Upload CSV with headers: Shipped Date, Employee Name, Order
+                  ID, Tracking.
                 </p>
 
                 <input
@@ -756,7 +832,8 @@ const CasesShippedToCustomerCsv = () => {
 
                 {uploadedFileName && (
                   <p className="mt-2 text-xs text-gray-600">
-                    Uploaded file: <span className="font-semibold">{uploadedFileName}</span>
+                    Uploaded file:{" "}
+                    <span className="font-semibold">{uploadedFileName}</span>
                   </p>
                 )}
 
@@ -771,7 +848,9 @@ const CasesShippedToCustomerCsv = () => {
                 <button
                   type="button"
                   onClick={() => validateRows(parsedRows)}
-                  disabled={submitting || validatingCases || parsedRows.length === 0}
+                  disabled={
+                    submitting || validatingCases || parsedRows.length === 0
+                  }
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   {validatingCases ? "Validating..." : "Validate"}
@@ -788,14 +867,17 @@ const CasesShippedToCustomerCsv = () => {
 
               <div className="rounded-lg border border-gray-300 p-4 space-y-4">
                 <div className="text-xs text-gray-500">
-                  Carriers loaded: {loadingCarriers ? "Loading..." : carriers.length}
+                  Carriers loaded:{" "}
+                  {loadingCarriers ? "Loading..." : carriers.length}
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
                   <button
                     type="button"
                     onClick={submitShipment}
-                    disabled={submitting || validatingCases || validCases.length === 0}
+                    disabled={
+                      submitting || validatingCases || validCases.length === 0
+                    }
                     className="px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     Ship Cases to Customer
@@ -808,7 +890,9 @@ const CasesShippedToCustomerCsv = () => {
               <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
                 <div className="bg-green-50 border-b border-green-200 px-6 py-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900">Valid Cases</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Valid Cases
+                    </h2>
                     <span className="text-sm font-medium text-green-700">
                       Count: {validCases.length}
                     </span>
@@ -894,7 +978,9 @@ const CasesShippedToCustomerCsv = () => {
               <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
                 <div className="bg-red-50 border-b border-red-200 px-6 py-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900">Invalid Cases</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Invalid Cases
+                    </h2>
                     <span className="text-sm font-medium text-red-700">
                       Count: {invalidCases.length}
                     </span>
@@ -970,7 +1056,10 @@ const CasesShippedToCustomerCsv = () => {
                             <button
                               type="button"
                               onClick={() =>
-                                handleDeleteInvalidCase(item.caseId, item.rowNumber)
+                                handleDeleteInvalidCase(
+                                  item.caseId,
+                                  item.rowNumber,
+                                )
                               }
                               className="text-xs px-2 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
                             >
@@ -990,7 +1079,9 @@ const CasesShippedToCustomerCsv = () => {
             <div className="bg-white shadow-sm rounded-lg border border-gray-400 overflow-hidden">
               <div className="bg-sky-50 border-b border-sky-200 px-6 py-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900">Shipped Cases</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Shipped Cases
+                  </h2>
                   <span className="text-sm font-medium text-sky-700">
                     Count: {shippedCases.length}
                   </span>
