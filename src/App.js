@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import ShopifyCasesReceived from "./pages/ShopifyCasesReceived";
 import CaseStatusUpdate from "./pages/CaseStatusUpdate";
 import CasesShippedToCustomer from "./pages/CasesShippedToCustomer";
+import CasesShippedToCustomerCsv from "./pages/CasesShippedToCustomerCsv";
 import RushCasesReport from "./pages/RushCasesReport";
 import { ROUTES } from "./config/constants";
 
@@ -68,6 +69,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CasesShippedToCustomer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.CASES_SHIPPED_TO_CUSTOMER_CSV}
+              element={
+                <ProtectedRoute>
+                  <CasesShippedToCustomerCsv />
                 </ProtectedRoute>
               }
             />

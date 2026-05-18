@@ -12,6 +12,8 @@ export const ROUTES = {
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
   CASE_STATUS_UPDATE: "/dashboard/case-status-update",
   CASES_SHIPPED_TO_CUSTOMER: "/dashboard/cases-shipped-to-customer",
+  CASES_SHIPPED_TO_CUSTOMER_CSV:
+    "/dashboard/offline-processes/cases-shipped-to-customer-csv",
   RUSH_CASES_REPORT: "/dashboard/reports/rush-cases",
 };
 
@@ -60,6 +62,17 @@ export const NAV_ITEMS = [
         label: "Cases Shipped to Customer",
         key: "cases-shipped-to-customer",
         route: ROUTES.CASES_SHIPPED_TO_CUSTOMER,
+      },
+    ],
+  },
+  {
+    label: "Offline Processes",
+    key: "offline-processes",
+    children: [
+      {
+        label: "Cases Shipped to Customer (CSV)",
+        key: "cases-shipped-to-customer-csv",
+        route: ROUTES.CASES_SHIPPED_TO_CUSTOMER_CSV,
       },
     ],
   },
