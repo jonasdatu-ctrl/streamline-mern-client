@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -165,12 +171,7 @@ const parseCsvContent = (content) => {
   }
 
   const headers = parseCsvLine(lines[0]);
-  const requiredHeaders = [
-    "Shipped Date",
-    "UserLogin",
-    "Order ID",
-    "Tracking",
-  ];
+  const requiredHeaders = ["Shipped Date", "UserLogin", "Order ID", "Tracking"];
 
   const missingHeaders = requiredHeaders.filter(
     (requiredHeader) => !headers.includes(requiredHeader),
@@ -254,6 +255,7 @@ const CasesShippedToCustomerCsv = () => {
   ] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // Map of carrierId to carrierName for auto-detection
   const carrierNameById = useMemo(() => {
     const map = new Map();
     (carriers || []).forEach((carrier) => {
@@ -420,32 +422,30 @@ const CasesShippedToCustomerCsv = () => {
 
         seenCaseIds.add(caseId);
 
+        // Enforce carrier auto-detection from tracking number only
+        const inferredCarrierId =
+          detectCarrierIdFromTrackingNumber(trackingNumber);
+        if (!inferredCarrierId) {
+          nextInvalidCases.push({
+            rowNumber: row.rowNumber,
+            caseId,
+            orderId: row.orderId || "-",
+            userLogin,
+            shippedDate,
+            trackingNumber,
+            caseStatus: "-",
+            reason: "Carrier Not Detected",
+            details:
+              "Unable to auto-detect carrier from tracking number. Only supported carriers are allowed.",
+          });
+          continue;
+        }
+
         try {
           const response = await apiPost("/shipping/validate-case", { caseId });
           const result = response?.data || {};
 
           if (result.valid) {
-            const resolvedCarrierId = String(result.shipCarrierId || "").trim();
-            const inferredCarrierId =
-              detectCarrierIdFromTrackingNumber(trackingNumber);
-            const carrierId = resolvedCarrierId || inferredCarrierId || "0";
-
-            if (!parseInt(carrierId, 10) || parseInt(carrierId, 10) < 1) {
-              nextInvalidCases.push({
-                rowNumber: row.rowNumber,
-                caseId,
-                orderId: row.orderId || "-",
-                userLogin,
-                shippedDate,
-                trackingNumber,
-                caseStatus: result.caseStatus || "-",
-                reason: "Carrier Not Resolved",
-                details:
-                  "Unable to resolve a valid carrier from case or tracking number",
-              });
-              continue;
-            }
-
             nextValidCases.push({
               rowNumber: row.rowNumber,
               caseId,
@@ -458,8 +458,8 @@ const CasesShippedToCustomerCsv = () => {
               receivedDate: result.receivedDate || null,
               lastStatusUpdate: result.lastStatusUpdate || null,
               isRush: Boolean(result.isRush),
-              carrierId,
-              carrierName: carrierNameById.get(carrierId) || "-",
+              carrierId: inferredCarrierId,
+              carrierName: carrierNameById.get(inferredCarrierId) || "-",
             });
           } else {
             const openCount = parseInt(result.checkOpenTicket, 10) || 0;
@@ -859,8 +859,8 @@ const CasesShippedToCustomerCsv = () => {
                   Case ID Input
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Upload CSV with headers: Shipped Date, UserLogin, Order
-                  ID, Tracking.
+                  Upload CSV with headers: Shipped Date, UserLogin, Order ID,
+                  Tracking.
                 </p>
                 <button
                   type="button"
@@ -915,9 +915,10 @@ const CasesShippedToCustomerCsv = () => {
               </div>
 
               <div className="rounded-lg border border-gray-300 p-4 space-y-4">
+                {/* Carrier selection is not allowed in offline CSV mode. Carrier is auto-detected from tracking number. */}
                 <div className="text-xs text-gray-500">
-                  Carriers loaded:{" "}
-                  {loadingCarriers ? "Loading..." : carriers.length}
+                  Carrier is auto-detected from tracking number. Manual
+                  selection is not allowed.
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
@@ -966,6 +967,12 @@ const CasesShippedToCustomerCsv = () => {
                             UserLogin
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Carrier Name
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Carrier ID
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Shipped Date
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1001,6 +1008,12 @@ const CasesShippedToCustomerCsv = () => {
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
                             {item.userLogin || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.carrierName || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {item.carrierId || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                             {formatDisplayDate(item.shippedDate)}
