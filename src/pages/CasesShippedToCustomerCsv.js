@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Layout from "../components/layout/Layout";
 import { apiGet, apiPost } from "../utils/api";
 
@@ -167,7 +167,7 @@ const parseCsvContent = (content) => {
   const headers = parseCsvLine(lines[0]);
   const requiredHeaders = [
     "Shipped Date",
-    "Employee Name",
+    "Employee ID",
     "Order ID",
     "Tracking",
   ];
@@ -196,12 +196,12 @@ const parseCsvContent = (content) => {
     });
 
     const shippedDate = sanitizeCsvCell(row["Shipped Date"]);
-    const employeeName = sanitizeCsvCell(row["Employee Name"]);
+    const employeeId = sanitizeCsvCell(row["Employee ID"]);
     const orderId = sanitizeCsvCell(row["Order ID"]);
     const trackingNumber = sanitizeCsvCell(row.Tracking);
 
     const isCompletelyEmpty =
-      !shippedDate && !employeeName && !orderId && !trackingNumber;
+      !shippedDate && !employeeId && !orderId && !trackingNumber;
 
     if (isCompletelyEmpty) {
       dataRowNumber += 1;
@@ -211,7 +211,7 @@ const parseCsvContent = (content) => {
     rows.push({
       rowNumber: dataRowNumber,
       shippedDate,
-      employeeName,
+      employeeId,
       orderId,
       trackingNumber,
     });
@@ -230,6 +230,7 @@ const parseCsvContent = (content) => {
 };
 
 const CasesShippedToCustomerCsv = () => {
+  const csvFileInputRef = useRef(null);
   const [carriers, setCarriers] = useState([]);
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [parsedRows, setParsedRows] = useState([]);
@@ -326,11 +327,30 @@ const CasesShippedToCustomerCsv = () => {
     setParsedRows([]);
     setValidCases([]);
     setInvalidCases([]);
+    if (csvFileInputRef.current) {
+      csvFileInputRef.current.value = "";
+    }
   };
 
   const handleClearAll = () => {
     resetEntryFields();
     setError("");
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = "Shipped Date,Employee ID,Order ID,Tracking\n";
+    const blob = new Blob([`\uFEFF${headers}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "cases-shipped-template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   const validateRows = useCallback(
@@ -349,7 +369,7 @@ const CasesShippedToCustomerCsv = () => {
 
       for (const row of rowsToValidate) {
         const caseId = normalizeCaseId(row.orderId);
-        const employeeName = row.employeeName || "-";
+        const employeeId = row.employeeId || "-";
         const shippedDate = row.shippedDate || "-";
         const trackingNumber = row.trackingNumber || "";
 
@@ -358,7 +378,7 @@ const CasesShippedToCustomerCsv = () => {
             rowNumber: row.rowNumber,
             caseId: "-",
             orderId: row.orderId || "-",
-            employeeName,
+            employeeId,
             shippedDate,
             trackingNumber: trackingNumber || "-",
             caseStatus: "-",
@@ -373,7 +393,7 @@ const CasesShippedToCustomerCsv = () => {
             rowNumber: row.rowNumber,
             caseId,
             orderId: row.orderId || "-",
-            employeeName,
+            employeeId,
             shippedDate,
             trackingNumber: "-",
             caseStatus: "-",
@@ -388,7 +408,7 @@ const CasesShippedToCustomerCsv = () => {
             rowNumber: row.rowNumber,
             caseId,
             orderId: row.orderId || "-",
-            employeeName,
+            employeeId,
             shippedDate,
             trackingNumber,
             caseStatus: "-",
@@ -415,7 +435,7 @@ const CasesShippedToCustomerCsv = () => {
                 rowNumber: row.rowNumber,
                 caseId,
                 orderId: row.orderId || "-",
-                employeeName,
+                employeeId,
                 shippedDate,
                 trackingNumber,
                 caseStatus: result.caseStatus || "-",
@@ -430,7 +450,7 @@ const CasesShippedToCustomerCsv = () => {
               rowNumber: row.rowNumber,
               caseId,
               orderId: row.orderId || "-",
-              employeeName,
+              employeeId,
               shippedDate,
               trackingNumber,
               customerName: result.customerName || "-",
@@ -452,7 +472,7 @@ const CasesShippedToCustomerCsv = () => {
                 rowNumber: row.rowNumber,
                 caseId,
                 orderId: row.orderId || "-",
-                employeeName,
+                employeeId,
                 shippedDate,
                 trackingNumber,
                 caseStatus: result.caseStatus || "-",
@@ -466,7 +486,7 @@ const CasesShippedToCustomerCsv = () => {
                 rowNumber: row.rowNumber,
                 caseId,
                 orderId: row.orderId || "-",
-                employeeName,
+                employeeId,
                 shippedDate,
                 trackingNumber,
                 caseStatus: result.caseStatus || "-",
@@ -478,7 +498,7 @@ const CasesShippedToCustomerCsv = () => {
                 rowNumber: row.rowNumber,
                 caseId,
                 orderId: row.orderId || "-",
-                employeeName,
+                employeeId,
                 shippedDate,
                 trackingNumber,
                 caseStatus: result.caseStatus || "-",
@@ -490,7 +510,7 @@ const CasesShippedToCustomerCsv = () => {
                 rowNumber: row.rowNumber,
                 caseId,
                 orderId: row.orderId || "-",
-                employeeName,
+                employeeId,
                 shippedDate,
                 trackingNumber,
                 caseStatus: result.caseStatus || "-",
@@ -510,7 +530,7 @@ const CasesShippedToCustomerCsv = () => {
             rowNumber: row.rowNumber,
             caseId,
             orderId: row.orderId || "-",
-            employeeName,
+            employeeId,
             shippedDate,
             trackingNumber,
             caseStatus: "-",
@@ -584,7 +604,7 @@ const CasesShippedToCustomerCsv = () => {
             <td>${escapeHtml(item.caseId)}</td>
             <td>${escapeHtml(item.customerName || "-")}</td>
             <td>${escapeHtml(item.caseStatus || "-")}</td>
-            <td>${escapeHtml(item.employeeName || "-")}</td>
+            <td>${escapeHtml(item.employeeId || "-")}</td>
             <td>${escapeHtml(item.trackingNumber || "-")}</td>
             <td>${escapeHtml(formatDisplayDate(item.shippedDate))}</td>
           </tr>
@@ -628,7 +648,7 @@ const CasesShippedToCustomerCsv = () => {
                 <th>Case ID</th>
                 <th>Customer Name</th>
                 <th>Case Status</th>
-                <th>Employee Name</th>
+                <th>Employee ID</th>
                 <th>Tracking Number</th>
                 <th>Shipped Date</th>
               </tr>
@@ -674,12 +694,18 @@ const CasesShippedToCustomerCsv = () => {
 
         if (existing) {
           existing.caseIds.push(item.caseId);
+          existing.employeeIdByCaseId[item.caseId] = String(
+            item.employeeId || "",
+          ).trim();
         } else {
           groupedPayloads.set(key, {
             carrierId,
             carrierName: carrierNameById.get(String(carrierId)) || "-",
             trackingNumber: tracking,
             caseIds: [item.caseId],
+            employeeIdByCaseId: {
+              [item.caseId]: String(item.employeeId || "").trim(),
+            },
           });
         }
       });
@@ -738,7 +764,7 @@ const CasesShippedToCustomerCsv = () => {
               processedItem.carrierName ||
               rowMeta?.carrierName ||
               payload.carrierName,
-            employeeName: rowMeta?.employeeName || "-",
+            employeeId: rowMeta?.employeeId || "-",
           });
         });
       }
@@ -833,11 +859,19 @@ const CasesShippedToCustomerCsv = () => {
                   Case ID Input
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Upload CSV with headers: Shipped Date, Employee Name, Order
+                  Upload CSV with headers: Shipped Date, Employee ID, Order
                   ID, Tracking.
                 </p>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="text-xs text-blue-700 underline hover:text-blue-900 mb-3"
+                >
+                  Download template
+                </button>
 
                 <input
+                  ref={csvFileInputRef}
                   type="file"
                   accept=".csv,text/csv"
                   onChange={handleCsvUpload}
@@ -929,7 +963,7 @@ const CasesShippedToCustomerCsv = () => {
                             Case Status
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Employee Name
+                            Employee ID
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Shipped Date
@@ -966,7 +1000,7 @@ const CasesShippedToCustomerCsv = () => {
                             {item.caseStatus || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
-                            {item.employeeName || "-"}
+                            {item.employeeId || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                             {formatDisplayDate(item.shippedDate)}
@@ -1013,7 +1047,7 @@ const CasesShippedToCustomerCsv = () => {
                             Case Status
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Employee Name
+                            Employee ID
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Shipped Date
@@ -1053,7 +1087,7 @@ const CasesShippedToCustomerCsv = () => {
                             {item.caseStatus || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
-                            {item.employeeName || "-"}
+                            {item.employeeId || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                             {formatDisplayDate(item.shippedDate)}
@@ -1118,7 +1152,7 @@ const CasesShippedToCustomerCsv = () => {
                           Case Status
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Employee Name
+                          Employee ID
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Tracking Number
@@ -1155,7 +1189,7 @@ const CasesShippedToCustomerCsv = () => {
                           {item.caseStatus || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
-                          {item.employeeName || "-"}
+                          {item.employeeId || "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.trackingNumber || "-"}
