@@ -32,6 +32,47 @@ const SpecialShopifyCasesReceived = () => {
 
   const isAllowedCaseId = (value) => /^\d+$/.test(value) && value.length < 8;
 
+  const getInvalidLengthReason = (value) => {
+    if (!/^\d+$/.test(value)) {
+      return null;
+    }
+
+    if (value.length >= 8) {
+      return "Case ID is 8+ digits";
+    }
+
+    return null;
+  };
+
+  const parseNumericCaseIds = (input) => {
+    return input
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && /^\d+$/.test(line));
+  };
+
+  const parseCaseInput = (input) => {
+    return parseNumericCaseIds(input).reduce(
+      (acc, caseId) => {
+        const invalidReason = getInvalidLengthReason(caseId);
+
+        if (invalidReason) {
+          acc.invalidLengthCases.push({
+            caseId,
+            reason: invalidReason,
+            errorCode: "INVALID_CASE_ID_LENGTH",
+            orderData: null,
+          });
+        } else {
+          acc.validCaseIds.push(caseId);
+        }
+
+        return acc;
+      },
+      { validCaseIds: [], invalidLengthCases: [] },
+    );
+  };
+
   const fetchUserStats = useCallback(async () => {
     try {
       setStatsLoading(true);
@@ -55,30 +96,20 @@ const SpecialShopifyCasesReceived = () => {
   }, [fetchUserStats]);
 
   /**
-   * Parse input to extract case IDs (one per line, numerals only)
-   */
-  const parseCaseIds = (input) => {
-    return input
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line && isAllowedCaseId(line))
-      .map((line) => line.trim());
-  };
-
-  /**
    * Process all case IDs one by one
    */
   const handleProcess = async (inputOverride) => {
     const resolvedInput =
       typeof inputOverride === "string" ? inputOverride : caseInput;
-    const caseIds = parseCaseIds(resolvedInput);
+    const { validCaseIds, invalidLengthCases } = parseCaseInput(resolvedInput);
+    const allNumericCaseCount = validCaseIds.length + invalidLengthCases.length;
 
-    if (caseIds.length === 0) {
+    if (allNumericCaseCount === 0) {
       setError("Please enter valid case IDs (less than 8 digits only)");
       return;
     }
 
-    if (!batchProcessing && caseIds.length > 1) {
+    if (!batchProcessing && allNumericCaseCount > 1) {
       setError("Batch processing is disabled. Only one case ID allowed.");
       return;
     }
@@ -93,9 +124,13 @@ const SpecialShopifyCasesReceived = () => {
       setSuccessfulCases([]);
     }
 
+    if (invalidLengthCases.length > 0) {
+      setInvalidCases((prev) => [...prev, ...invalidLengthCases]);
+    }
+
     try {
       // Process each case ID sequentially
-      for (const caseId of caseIds) {
+      for (const caseId of validCaseIds) {
         try {
           // Step 1: Check if case exists in database
           const dbCheckResponse = await apiPost("/cases/receive-case", {
@@ -309,8 +344,24 @@ const SpecialShopifyCasesReceived = () => {
       return;
     }
 
-    if (!isAllowedCaseId(normalizedCaseId)) {
-      setError("Please enter a valid case ID with less than 8 digits.");
+    const invalidReason = getInvalidLengthReason(normalizedCaseId);
+    if (invalidReason) {
+      setError(null);
+      setInvalidCases((prev) => [
+        ...prev,
+        {
+          caseId: normalizedCaseId,
+          reason: invalidReason,
+          errorCode: "INVALID_CASE_ID_LENGTH",
+          orderData: null,
+        },
+      ]);
+      setCaseInput("");
+
+      setTimeout(() => {
+        caseInputRef.current?.focus();
+      }, 0);
+
       return;
     }
 
@@ -351,7 +402,7 @@ const SpecialShopifyCasesReceived = () => {
     existingCases.length +
     invalidCases.length +
     successfulCases.length;
-  const totalCaseIds = parseCaseIds(caseInput).length;
+  const totalCaseIds = parseNumericCaseIds(caseInput).length;
 
   return (
     <Layout
@@ -453,7 +504,9 @@ const SpecialShopifyCasesReceived = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={handleProcess}
-                    disabled={loading || parseCaseIds(caseInput).length === 0}
+                    disabled={
+                      loading || parseNumericCaseIds(caseInput).length === 0
+                    }
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                   >
                     {loading ? "Processing..." : "Process"}
