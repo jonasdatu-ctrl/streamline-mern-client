@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ShopifyCasesReceived from "./pages/ShopifyCasesReceived";
+import SpecialShopifyCasesReceived from "./pages/SpecialShopifyCasesReceived";
 import CaseStatusUpdate from "./pages/CaseStatusUpdate";
 import CasesShippedToCustomer from "./pages/CasesShippedToCustomer";
 import CasesShippedToCustomerCsv from "./pages/CasesShippedToCustomerCsv";
@@ -53,6 +54,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ShopifyCasesReceived />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.SPECIAL_SHOPIFY_CASES_RECEIVED}
+              element={
+                <ProtectedRoute>
+                  <SpecialShopifyCasesReceived />
                 </ProtectedRoute>
               }
             />
