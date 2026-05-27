@@ -10,6 +10,8 @@ export const ROUTES = {
   HOME: "/",
   DASHBOARD: "/dashboard",
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
+  SPECIAL_SHOPIFY_CASES_RECEIVED:
+    "/dashboard/special-shopify-cases-received",
   CASE_STATUS_UPDATE: "/dashboard/case-status-update",
   CASES_SHIPPED_TO_CUSTOMER: "/dashboard/cases-shipped-to-customer",
   CASES_SHIPPED_TO_CUSTOMER_CSV:
@@ -49,9 +51,14 @@ export const NAV_ITEMS = [
     key: "transaction-manager",
     children: [
       {
-        label: "Shopify Cases Received",
+        label: "Shopify Cases Received - 8+ Digits",
         key: "shopify-cases-received",
         route: ROUTES.SHOPIFY_CASES_RECEIVED,
+      },
+      {
+        label: "Special Shopify Cases Received - Less than 8 Digits",
+        key: "special-shopify-cases-received",
+        route: ROUTES.SPECIAL_SHOPIFY_CASES_RECEIVED,
       },
       {
         label: "Case Status Update",

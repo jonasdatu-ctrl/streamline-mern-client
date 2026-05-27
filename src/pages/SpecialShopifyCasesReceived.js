@@ -17,7 +17,7 @@ import { apiGet, apiPost } from "../utils/api";
  * Shopify Cases Received page component
  * Shows interface for processing new Shopify cases
  */
-const ShopifyCasesReceived = () => {
+const SpecialShopifyCasesReceived = () => {
   const [caseInput, setCaseInput] = useState("");
   const [batchProcessing, setBatchProcessing] = useState(false);
   const [processingCases, setProcessingCases] = useState([]);
@@ -30,15 +30,15 @@ const ShopifyCasesReceived = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const caseInputRef = useRef(null);
 
-  const isAllowedCaseId = (value) => /^\d+$/.test(value) && value.length >= 8;
+  const isAllowedCaseId = (value) => /^\d+$/.test(value) && value.length < 8;
 
   const getInvalidLengthReason = (value) => {
     if (!/^\d+$/.test(value)) {
       return null;
     }
 
-    if (value.length < 8) {
-      return "Case ID is less than 8 digits";
+    if (value.length >= 8) {
+      return "Case ID is 8+ digits";
     }
 
     return null;
@@ -105,7 +105,7 @@ const ShopifyCasesReceived = () => {
     const allNumericCaseCount = validCaseIds.length + invalidLengthCases.length;
 
     if (allNumericCaseCount === 0) {
-      setError("Please enter valid case IDs (8+ digits only)");
+      setError("Please enter valid case IDs (less than 8 digits only)");
       return;
     }
 
@@ -405,14 +405,17 @@ const ShopifyCasesReceived = () => {
   const totalCaseIds = parseNumericCaseIds(caseInput).length;
 
   return (
-    <Layout showLogout={true} title="Shopify Cases Received - 8+ Digits">
+    <Layout
+      showLogout={true}
+      title="Special Shopify Cases Received - Less than 8 Digits"
+    >
       <div className="space-y-6">
         {/* Header Section */}
         <div className="bg-white shadow-sm rounded-lg border border-gray-400 p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Shopify Cases Received - 8+ Digits
+                Special Shopify Cases Received - Less than 8 Digits
               </h1>
               <p className="text-gray-600">Receive case IDs from Shopify</p>
             </div>
@@ -446,8 +449,8 @@ const ShopifyCasesReceived = () => {
                   </label>
                   <p className="text-xs text-gray-500 mb-3">
                     {batchProcessing
-                      ? "Enter case IDs with 8+ digits (numerals only). One per line. Barcode scans automatically add newlines."
-                      : "Enter a single case ID with 8+ digits (numerals only). Enable batch processing to enter multiple IDs."}
+                      ? "Enter case IDs with less than 8 digits (numerals only). One per line. Barcode scans automatically add newlines."
+                      : "Enter a single case ID with less than 8 digits (numerals only). Enable batch processing to enter multiple IDs."}
                   </p>
 
                   <div className="grid grid-cols-2 gap-2 mb-3">
@@ -482,7 +485,7 @@ const ShopifyCasesReceived = () => {
                       ref={caseInputRef}
                       value={caseInput}
                       onChange={handleInputChange}
-                      placeholder="Enter case IDs here&#10;12345678&#10;87654321&#10;..."
+                      placeholder="Enter case IDs here&#10;1234567&#10;7654321&#10;..."
                       className="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
                     />
                   ) : (
@@ -492,7 +495,7 @@ const ShopifyCasesReceived = () => {
                       value={caseInput}
                       onChange={handleInputChange}
                       onKeyDown={handleSingleCaseInputKeyDown}
-                      placeholder="Enter 8+ digit case ID here"
+                      placeholder="Enter less than 8 digit case ID here"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                     />
                   )}
@@ -786,4 +789,4 @@ const ShopifyCasesReceived = () => {
   );
 };
 
-export default ShopifyCasesReceived;
+export default SpecialShopifyCasesReceived;
