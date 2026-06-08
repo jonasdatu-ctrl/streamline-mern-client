@@ -79,7 +79,9 @@ const CasesPage = () => {
       setPhotosError("");
 
       try {
-        const response = await apiGet(`/cases/${currentCaseId}/customer-photos`);
+        const response = await apiGet(
+          `/cases/${currentCaseId}/customer-photos`,
+        );
         if (response.status !== "success") {
           throw new Error(response.message || "Failed to load customer photos");
         }
@@ -211,44 +213,43 @@ const CasesPage = () => {
                   </div>
                 )}
 
-                {!photosLoading && !photosError && customerPhotos.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-gray-300 p-6 text-sm text-gray-500 text-center">
-                    No customer photos found for this case.
-                  </div>
-                )}
+                {!photosLoading &&
+                  !photosError &&
+                  customerPhotos.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-gray-300 p-6 text-sm text-gray-500 text-center">
+                      No customer photos found for this case.
+                    </div>
+                  )}
 
-                {!photosLoading && !photosError && customerPhotos.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {customerPhotos.map((photo) => (
-                      <button
-                        key={photo.ID}
-                        type="button"
-                        onClick={() => setSelectedPhoto(photo)}
-                        className="group text-left bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
-                          <img
-                            src={photo.Photo_Link}
-                            alt={`Customer upload ${photo.ID}`}
-                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="p-4 space-y-1">
-                          <p className="text-sm font-medium text-gray-900">
-                            Customer Photo #{photo.ID}
-                          </p>
-                          <p className="text-xs text-gray-500 break-all">
-                            {photo.Customer_Email || "No email available"}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Uploaded: {formatUploadDate(photo.CreatedDate)}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {!photosLoading &&
+                  !photosError &&
+                  customerPhotos.length > 0 && (
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                      {customerPhotos.map((photo) => (
+                        <button
+                          key={photo.ID}
+                          type="button"
+                          onClick={() => setSelectedPhoto(photo)}
+                          className="group text-left bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="aspect-square bg-gray-100 overflow-hidden">
+                            <img
+                              src={photo.Photo_Link}
+                              alt={`Customer upload ${photo.ID}`}
+                              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <div className="px-2 py-1.5">
+                            <p className="text-[11px] text-gray-600 truncate">
+                              Uploaded: {formatUploadDate(photo.CreatedDate)}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -274,13 +275,8 @@ const CasesPage = () => {
 
             <div className="relative z-10 w-full max-w-6xl">
               <div className="flex items-start justify-between gap-4 mb-4 text-white">
-                <div>
-                  <p className="text-lg font-semibold">
-                    Customer Photo #{selectedPhoto.ID}
-                  </p>
-                  <p className="text-sm text-gray-300">
-                    Uploaded: {formatUploadDate(selectedPhoto.CreatedDate)}
-                  </p>
+                <div className="text-sm text-gray-300">
+                  Uploaded: {formatUploadDate(selectedPhoto.CreatedDate)}
                 </div>
                 <button
                   type="button"
@@ -296,6 +292,7 @@ const CasesPage = () => {
                   src={selectedPhoto.Photo_Link}
                   alt={`Customer upload ${selectedPhoto.ID}`}
                   className="w-full max-h-[80vh] object-contain"
+                  referrerPolicy="no-referrer"
                 />
               </div>
             </div>
