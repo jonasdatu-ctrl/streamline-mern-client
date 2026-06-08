@@ -5,7 +5,7 @@ import { apiGet } from "../utils/api";
 
 const formatUploadDate = (value) => {
   if (!value) {
-    return "Upload date unavailable";
+    return "NA";
   }
 
   const date = new Date(value);
@@ -22,7 +22,6 @@ const CasesPage = () => {
   const [customerPhotos, setCustomerPhotos] = useState([]);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photosError, setPhotosError] = useState("");
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -70,7 +69,6 @@ const CasesPage = () => {
     if (!currentCaseId) {
       setCustomerPhotos([]);
       setPhotosError("");
-      setSelectedPhoto(null);
       return;
     }
 
@@ -193,62 +191,48 @@ const CasesPage = () => {
             </h2>
           </div>
           <div className="p-6 space-y-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 bg-white">
-                <h3 className="text-base font-semibold text-gray-900">
-                  Customer Photos
-                </h3>
-              </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                FormsApp photos
+              </h3>
 
-              <div className="p-6">
+              <div className="mt-3">
                 {photosLoading && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                    Loading customer photos...
-                  </div>
+                  <p className="text-sm text-blue-800">Loading photos...</p>
                 )}
 
                 {!photosLoading && photosError && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
-                    {photosError}
-                  </div>
+                  <p className="text-sm text-red-700">{photosError}</p>
                 )}
 
                 {!photosLoading &&
                   !photosError &&
                   customerPhotos.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-gray-300 p-6 text-sm text-gray-500 text-center">
-                      No customer photos found for this case.
-                    </div>
+                    <p className="text-sm text-gray-500">
+                      No FormsApp photos found for this case.
+                    </p>
                   )}
 
                 {!photosLoading &&
                   !photosError &&
                   customerPhotos.length > 0 && (
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                      {customerPhotos.map((photo) => (
-                        <button
-                          key={photo.ID}
-                          type="button"
-                          onClick={() => setSelectedPhoto(photo)}
-                          className="group text-left bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                        >
-                          <div className="aspect-square bg-gray-100 overflow-hidden">
-                            <img
-                              src={photo.Photo_Link}
-                              alt={`Customer upload ${photo.ID}`}
-                              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
-                          <div className="px-2 py-1.5">
-                            <p className="text-[11px] text-gray-600 truncate">
-                              Uploaded: {formatUploadDate(photo.CreatedDate)}
-                            </p>
-                          </div>
-                        </button>
+                    <ul className="divide-y divide-gray-200">
+                      {customerPhotos.map((photo, index) => (
+                        <li key={photo.ID} className="py-2.5 text-sm">
+                          <a
+                            href={photo.Photo_Link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-700 hover:text-blue-900 underline break-all"
+                          >
+                            FormsApp photo {index + 1}
+                          </a>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            Uploaded: {formatUploadDate(photo.CreatedDate)}
+                          </p>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
               </div>
             </div>
@@ -264,40 +248,6 @@ const CasesPage = () => {
           <div className="p-6 min-h-[160px]"></div>
         </div>
 
-        {selectedPhoto && (
-          <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-6">
-            <button
-              type="button"
-              className="absolute inset-0 cursor-default"
-              onClick={() => setSelectedPhoto(null)}
-              aria-label="Close photo viewer"
-            />
-
-            <div className="relative z-10 w-full max-w-6xl">
-              <div className="flex items-start justify-between gap-4 mb-4 text-white">
-                <div className="text-sm text-gray-300">
-                  Uploaded: {formatUploadDate(selectedPhoto.CreatedDate)}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPhoto(null)}
-                  className="rounded-md border border-white/30 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
-                >
-                  Close
-                </button>
-              </div>
-
-              <div className="rounded-lg overflow-hidden bg-black border border-white/10">
-                <img
-                  src={selectedPhoto.Photo_Link}
-                  alt={`Customer upload ${selectedPhoto.ID}`}
-                  className="w-full max-h-[80vh] object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </Layout>
   );
