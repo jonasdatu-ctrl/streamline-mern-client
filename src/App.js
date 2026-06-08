@@ -12,6 +12,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import CasesPage from "./pages/CasesPage";
 import ShopifyCasesReceived from "./pages/ShopifyCasesReceived";
 import SpecialShopifyCasesReceived from "./pages/SpecialShopifyCasesReceived";
 import CaseStatusUpdate from "./pages/CaseStatusUpdate";
@@ -44,6 +45,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected routes - Cases */}
+            <Route
+              path={ROUTES.CASES}
+              element={
+                <ProtectedRoute>
+                  <CasesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={`${ROUTES.CASES}/:caseId`}
+              element={
+                <ProtectedRoute>
+                  <CasesPage />
                 </ProtectedRoute>
               }
             />

@@ -9,6 +9,7 @@
 export const ROUTES = {
   HOME: "/",
   DASHBOARD: "/dashboard",
+  CASES: "/dashboard/cases",
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
   SPECIAL_SHOPIFY_CASES_RECEIVED:
     "/dashboard/special-shopify-cases-received",
@@ -46,6 +47,19 @@ export const MESSAGES = {
  */
 export const NAV_ITEMS = [
   { label: "Home", key: "home", route: ROUTES.DASHBOARD },
+  {
+    label: "Cases",
+    key: "cases",
+    route: ROUTES.CASES,
+    children: [
+      {
+        label: "Search Case ID",
+        key: "search-case-id",
+        route: null,
+        disabled: true,
+      },
+    ],
+  },
   {
     label: "Transaction Manager (Tags)",
     key: "transaction-manager",

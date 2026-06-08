@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import Layout from "../components/layout/Layout";
+import CaseIdLink from "../components/common/CaseIdLink";
 import { apiGet, apiPost } from "../utils/api";
 
 const CARRIER_ID_FEDEX_PAK = "95";
@@ -998,7 +999,7 @@ const CasesShippedToCustomerCsv = () => {
                       {validCases.map((item) => (
                         <tr key={item.caseId}>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            {item.caseId}
+                            <CaseIdLink caseId={item.caseId} />
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
                             {item.customerName || "-"}
@@ -1193,7 +1194,7 @@ const CasesShippedToCustomerCsv = () => {
                     {shippedCases.map((item) => (
                       <tr key={item.caseId}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                          {item.caseId}
+                          <CaseIdLink caseId={item.caseId} />
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {item.customerName || "-"}

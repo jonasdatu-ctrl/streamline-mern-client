@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Layout from "../components/layout/Layout";
+import CaseIdLink from "../components/common/CaseIdLink";
 import { apiGet, apiPost } from "../utils/api";
 
 /**
@@ -851,7 +852,10 @@ const CaseStatusUpdate = () => {
                       {successfulCases.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                            {item.caseId}
+                            <CaseIdLink
+                              caseId={item.caseId}
+                              className="text-green-600 hover:text-green-800"
+                            />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.customerName}

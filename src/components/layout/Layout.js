@@ -6,7 +6,7 @@
  * and main content area on the right.
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -28,9 +28,37 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({
+    cases: true,
     "transaction-manager": true,
     "offline-processes": true,
   }); // Default expanded
+
+  const currentCaseId = useMemo(() => {
+    const match = location.pathname.match(/^\/dashboard\/cases\/(\d+)$/);
+    return match ? match[1] : "";
+  }, [location.pathname]);
+
+  const navItems = useMemo(() => {
+    return NAV_ITEMS.map((item) => {
+      if (item.key !== "cases") {
+        return item;
+      }
+
+      const children = [...(item.children || [])];
+      if (currentCaseId) {
+        children.push({
+          label: `Case - ${currentCaseId}`,
+          key: `case-${currentCaseId}`,
+          route: `/dashboard/cases/${currentCaseId}`,
+        });
+      }
+
+      return {
+        ...item,
+        children,
+      };
+    });
+  }, [currentCaseId]);
 
   /**
    * Handle user logout
@@ -63,7 +91,16 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
    * @param {boolean} hasChildren - Whether the item has children
    * @param {string} menuKey - Menu key for expansion toggle
    */
-  const handleNavClick = (route, hasChildren = false, menuKey = null) => {
+  const handleNavClick = (
+    route,
+    hasChildren = false,
+    menuKey = null,
+    disabled = false,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
     if (hasChildren) {
       toggleMenuExpansion(menuKey);
     } else if (route) {
@@ -135,11 +172,12 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
 
           {/* Navigation Menu */}
           <nav className="flex-1 px-4 py-6 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const hasChildren = item.children && item.children.length > 0;
               const hasActiveChild = hasChildren && hasActiveChildRoute(item.children);
               const isExpanded = expandedMenus[item.key] ?? hasActiveChild;
-              const isActive = item.route && isActiveRoute(item.route);
+              const isActive =
+                (item.route && isActiveRoute(item.route)) || hasActiveChild;
 
               return (
                 <div key={item.key}>
@@ -169,6 +207,21 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
                               strokeLinejoin="round"
                               strokeWidth={2}
                               d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                            />
+                          </svg>
+                        )}
+                        {item.key === "cases" && (
+                          <svg
+                            className="w-full h-full"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 6h11M8 12h11M8 18h11M3 6h.01M3 12h.01M3 18h.01"
                             />
                           </svg>
                         )}
@@ -297,14 +350,21 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
                     <div className="ml-8 mt-1 space-y-1">
                       {item.children.map((child) => {
                         const childIsActive = isActiveRoute(child.route);
+                        const childIsDisabled = Boolean(child.disabled || !child.route);
                         return (
                           <button
                             key={child.key}
-                            onClick={() => handleNavClick(child.route)}
+                            type="button"
+                            onClick={() =>
+                              handleNavClick(child.route, false, null, childIsDisabled)
+                            }
+                            disabled={childIsDisabled}
                             className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium transition-colors duration-200 ${
                               childIsActive
                                 ? "bg-blue-500 text-white"
-                                : "text-gray-400 hover:text-white hover:bg-gray-600"
+                                : childIsDisabled
+                                  ? "text-gray-500 cursor-not-allowed"
+                                  : "text-gray-400 hover:text-white hover:bg-gray-600"
                             }`}
                           >
                             {child.label}

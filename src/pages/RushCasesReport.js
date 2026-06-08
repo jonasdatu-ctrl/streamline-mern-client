@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Layout from "../components/layout/Layout";
+import CaseIdLink from "../components/common/CaseIdLink";
 import { apiGet } from "../utils/api";
 
 const PAGE_SIZE = 20;
@@ -343,7 +344,10 @@ const RushCasesReport = () => {
                               <td
                                 className={`px-4 py-3 font-medium ${isRedRow ? "text-red-900" : "text-gray-900"}`}
                               >
-                                {row.Case_ID}
+                                <CaseIdLink
+                                  caseId={row.Case_ID}
+                                  className={isRedRow ? "text-red-900 hover:text-red-700" : ""}
+                                />
                               </td>
                               <td
                                 className={`px-4 py-3 ${isRedRow ? "text-red-800" : "text-gray-700"}`}
