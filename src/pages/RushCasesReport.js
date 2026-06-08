@@ -346,7 +346,11 @@ const RushCasesReport = () => {
                               >
                                 <CaseIdLink
                                   caseId={row.Case_ID}
-                                  className={isRedRow ? "text-red-900 hover:text-red-700" : ""}
+                                  className={
+                                    isRedRow
+                                      ? "text-red-900 hover:text-red-700"
+                                      : ""
+                                  }
                                 />
                               </td>
                               <td

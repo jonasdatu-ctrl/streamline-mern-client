@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Layout from "../components/layout/Layout";
-import { ROUTES } from "../config/constants";
 import { apiGet } from "../utils/api";
 
 const formatDate = (value) => {
@@ -18,9 +17,7 @@ const formatDate = (value) => {
 };
 
 const CasesPage = () => {
-  const navigate = useNavigate();
   const { caseId: routeCaseId } = useParams();
-  const [searchCaseId, setSearchCaseId] = useState(routeCaseId || "");
   const [caseInfo, setCaseInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,10 +26,6 @@ const CasesPage = () => {
     const normalized = String(routeCaseId || "").trim();
     return /^\d+$/.test(normalized) ? normalized : "";
   }, [routeCaseId]);
-
-  useEffect(() => {
-    setSearchCaseId(currentCaseId);
-  }, [currentCaseId]);
 
   useEffect(() => {
     if (!currentCaseId) {
@@ -69,48 +62,40 @@ const CasesPage = () => {
     fetchCase();
   }, [currentCaseId]);
 
-  const handleSearch = (event) => {
-    event.preventDefault();
+  const patientName = [
+    caseInfo?.Case_Patient_First_Name,
+    caseInfo?.Case_Patient_Last_Name,
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
 
-    const normalized = String(searchCaseId || "")
-      .replace(/\D/g, "")
-      .trim();
-
-    if (!normalized) {
-      setError("Please enter a numeric case ID.");
-      return;
-    }
-
-    navigate(`${ROUTES.CASES}/${normalized}`);
-  };
+  const headerCaseId = caseInfo?.Case_ID || currentCaseId;
+  const headerPatientNumber = caseInfo?.Case_Patient_Num || headerCaseId;
+  const headerPatientName = patientName || "Unknown";
+  const isRush = Boolean(caseInfo?.IsRushOrder);
 
   return (
     <Layout showLogout title="Cases">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-          <h1 className="text-2xl font-bold text-gray-900">Search Case ID</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Enter a case ID to browse its details.
-          </p>
-
-          <form onSubmit={handleSearch} className="mt-4 flex gap-3">
-            <input
-              type="text"
-              value={searchCaseId}
-              onChange={(event) =>
-                setSearchCaseId(String(event.target.value || "").replace(/\D/g, ""))
-              }
-              placeholder="Enter case ID"
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+        {headerCaseId && (
+          <div
+            className={`shadow-sm rounded-lg border p-6 ${
+              isRush
+                ? "bg-red-700 border-red-800"
+                : "bg-white border-gray-400"
+            }`}
+          >
+            <p
+              className={`text-base font-semibold ${
+                isRush ? "text-yellow-300" : "text-gray-900"
+              }`}
             >
-              Browse
-            </button>
-          </form>
-        </div>
+              Case ID: {headerCaseId} - Patient: {headerPatientName} #
+              {headerPatientNumber}
+            </p>
+          </div>
+        )}
 
         {!currentCaseId && (
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6 text-sm text-gray-600">
@@ -142,15 +127,21 @@ const CasesPage = () => {
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <dt className="text-gray-500">Case ID</dt>
-                  <dd className="text-gray-900 font-medium">{caseInfo.Case_ID}</dd>
+                  <dd className="text-gray-900 font-medium">
+                    {caseInfo.Case_ID}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-gray-500">Patient First Name</dt>
-                  <dd className="text-gray-900">{caseInfo.Case_Patient_First_Name || "-"}</dd>
+                  <dd className="text-gray-900">
+                    {caseInfo.Case_Patient_First_Name || "-"}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-gray-500">Received Date</dt>
-                  <dd className="text-gray-900">{formatDate(caseInfo.Case_Date_Received)}</dd>
+                  <dd className="text-gray-900">
+                    {formatDate(caseInfo.Case_Date_Received)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-gray-500">Current Status</dt>
@@ -160,11 +151,15 @@ const CasesPage = () => {
                 </div>
                 <div>
                   <dt className="text-gray-500">Status ID</dt>
-                  <dd className="text-gray-900">{caseInfo.Case_Status_ID ?? "-"}</dd>
+                  <dd className="text-gray-900">
+                    {caseInfo.Case_Status_ID ?? "-"}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-gray-500">Rush</dt>
-                  <dd className="text-gray-900">{caseInfo.IsRushOrder ? "Yes" : "No"}</dd>
+                  <dd className="text-gray-900">
+                    {caseInfo.IsRushOrder ? "Yes" : "No"}
+                  </dd>
                 </div>
               </dl>
             </div>

@@ -11,8 +11,7 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   CASES: "/dashboard/cases",
   SHOPIFY_CASES_RECEIVED: "/dashboard/shopify-cases-received",
-  SPECIAL_SHOPIFY_CASES_RECEIVED:
-    "/dashboard/special-shopify-cases-received",
+  SPECIAL_SHOPIFY_CASES_RECEIVED: "/dashboard/special-shopify-cases-received",
   CASE_STATUS_UPDATE: "/dashboard/case-status-update",
   CASES_SHIPPED_TO_CUSTOMER: "/dashboard/cases-shipped-to-customer",
   CASES_SHIPPED_TO_CUSTOMER_CSV:

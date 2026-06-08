@@ -174,7 +174,8 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
           <nav className="flex-1 px-4 py-6 space-y-1">
             {navItems.map((item) => {
               const hasChildren = item.children && item.children.length > 0;
-              const hasActiveChild = hasChildren && hasActiveChildRoute(item.children);
+              const hasActiveChild =
+                hasChildren && hasActiveChildRoute(item.children);
               const isExpanded = expandedMenus[item.key] ?? hasActiveChild;
               const isActive =
                 (item.route && isActiveRoute(item.route)) || hasActiveChild;
@@ -350,13 +351,20 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
                     <div className="ml-8 mt-1 space-y-1">
                       {item.children.map((child) => {
                         const childIsActive = isActiveRoute(child.route);
-                        const childIsDisabled = Boolean(child.disabled || !child.route);
+                        const childIsDisabled = Boolean(
+                          child.disabled || !child.route,
+                        );
                         return (
                           <button
                             key={child.key}
                             type="button"
                             onClick={() =>
-                              handleNavClick(child.route, false, null, childIsDisabled)
+                              handleNavClick(
+                                child.route,
+                                false,
+                                null,
+                                childIsDisabled,
+                              )
                             }
                             disabled={childIsDisabled}
                             className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium transition-colors duration-200 ${
@@ -384,13 +392,13 @@ const Layout = ({ children, showLogout = false, title = "" }) => {
               {currentUser && (
                 <div className="text-xs space-y-0.5">
                   <p className="text-gray-300 font-medium truncate">
-                    Logged-in user: 
+                    Logged-in user:
                     {currentUser.UserName ||
                       currentUser.displayName ||
                       currentUser.email}
                   </p>
                   <p className="text-gray-300">
-                    Date: 
+                    Date:
                     {new Date().toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
