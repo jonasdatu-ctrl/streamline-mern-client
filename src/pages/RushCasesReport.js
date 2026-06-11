@@ -18,6 +18,14 @@ const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 const formatDate = (raw) => {
   if (!raw) return "-";
+  // Preserve date-only values exactly as stored to avoid timezone shifts.
+  if (typeof raw === "string") {
+    const dateOnlyMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+    }
+  }
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "-";
   return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
