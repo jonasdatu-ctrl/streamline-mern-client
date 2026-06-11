@@ -297,7 +297,10 @@ const RejectedCasesReport = () => {
                         </tr>
                       ) : (
                         rows.map((row) => (
-                          <tr key={row.Case_ID} className="transition-colors hover:bg-gray-50">
+                          <tr
+                            key={row.Case_ID}
+                            className="transition-colors hover:bg-gray-50"
+                          >
                             <td className="px-4 py-3 font-medium text-gray-900">
                               {row.Case_ID}
                             </td>
