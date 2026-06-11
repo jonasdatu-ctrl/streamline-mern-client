@@ -247,7 +247,6 @@ const CasesPage = () => {
           </div>
           <div className="p-6 min-h-[160px]"></div>
         </div>
-
       </div>
     </Layout>
   );
