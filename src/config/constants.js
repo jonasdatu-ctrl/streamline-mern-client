@@ -17,6 +17,7 @@ export const ROUTES = {
   CASES_SHIPPED_TO_CUSTOMER_CSV:
     "/dashboard/offline-processes/cases-shipped-to-customer-csv",
   RUSH_CASES_REPORT: "/dashboard/reports/rush-cases",
+  REJECTED_CASES_REPORT: "/dashboard/reports/rejected-cases",
 };
 
 /**
@@ -93,6 +94,11 @@ export const NAV_ITEMS = [
         label: "Rush Cases",
         key: "rush-cases-report",
         route: ROUTES.RUSH_CASES_REPORT,
+      },
+      {
+        label: "Rejected Cases",
+        key: "rejected-cases-report",
+        route: ROUTES.REJECTED_CASES_REPORT,
       },
     ],
   },

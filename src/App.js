@@ -18,6 +18,7 @@ import CaseStatusUpdate from "./pages/CaseStatusUpdate";
 import CasesShippedToCustomer from "./pages/CasesShippedToCustomer";
 import CasesShippedToCustomerCsv from "./pages/CasesShippedToCustomerCsv";
 import RushCasesReport from "./pages/RushCasesReport";
+import RejectedCasesReport from "./pages/RejectedCasesReport";
 import { ROUTES } from "./config/constants";
 
 /**
@@ -96,6 +97,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RushCasesReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.REJECTED_CASES_REPORT}
+              element={
+                <ProtectedRoute>
+                  <RejectedCasesReport />
                 </ProtectedRoute>
               }
             />
